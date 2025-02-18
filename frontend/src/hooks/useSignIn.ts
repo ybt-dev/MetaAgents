@@ -29,8 +29,8 @@ const useSignIn = () => {
     try {
       const nonce = await createSessionNonce(account?.address || '');
 
-      const message = new TextEncoder().encode('Sign in with Sui to the SuiHubAi');
-      const preparedMessage = 'Sign in with Sui to the SuiHubAi';
+      const message = new TextEncoder().encode('Sign in with Initia to the MetaAgents');
+      const preparedMessage = 'Sign in with Initia to the MetaAgents';
 
       // TODO Handle case with non loaded providers.
       const res: Signature = (await signPersonalMessage({

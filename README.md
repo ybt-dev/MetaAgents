@@ -1,7 +1,7 @@
-# **Sui Hub AI**
+# **MetaAgents**
 
 ## **About the Project**  
-Sui Hub AI is an AI Marketing Department that can help you generate content / chatting / do onchain activity with others teammates autonomosly. The project is designed to create an innovative user experience with a flexible architecture and scalable components. This document will help you set up and run each part of the system with detailed instructions.
+MetaAgents is an AI Marketing Department that can help you generate content / chatting / do onchain activity with others teammates autonomosly. The project is designed to create an innovative user experience with a flexible architecture and scalable components. This document will help you set up and run each part of the system with detailed instructions.
 
 ---
 
