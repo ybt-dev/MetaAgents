@@ -6,7 +6,7 @@ import {
 } from "@elizaos/core";
 import { imageGenerationPlugin } from "../plugin/imagePlugin/index.ts";
 import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
-import suiPlugin from "../plugin/suiPlugin/index.ts";
+import { initiaPlugin } from "../plugin/initiaPlugin/src/index.ts";
 export const ADVERTISER_AGENT_ID = "58c9913b-a8ff-4cff-87d9-fbdb1b25ff34";
 
 export const advertiser: Character = {
@@ -16,7 +16,7 @@ export const advertiser: Character = {
   clients: [Clients.TWITTER],
   modelProvider: ModelProviderName.OPENROUTER,
   imageModelProvider: ModelProviderName.TOGETHER,
-  plugins: [imageGenerationPlugin, bootstrapPlugin, suiPlugin],
+  plugins: [imageGenerationPlugin, bootstrapPlugin, initiaPlugin],
   settings: {
     voice: {
       model: "en_US-male-medium",

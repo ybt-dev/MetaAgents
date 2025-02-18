@@ -6,7 +6,7 @@ import {
 } from "@elizaos/core";
 import { imageGenerationPlugin } from "../plugin/imagePlugin/index.ts";
 import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
-import suiPlugin from "../plugin/suiPlugin/index.ts";
+import { initiaPlugin } from "../plugin/initiaPlugin/src/index.ts";
 
 export const PRODUCER_AGENT_ID = "1de943dc-7fbf-4e84-8ae5-ce6b254d395c";
 
@@ -17,7 +17,7 @@ export const producer: Character = {
   clients: [],
   modelProvider: ModelProviderName.OPENROUTER,
   imageModelProvider: ModelProviderName.TOGETHER,
-  plugins: [imageGenerationPlugin, bootstrapPlugin, suiPlugin],
+  plugins: [imageGenerationPlugin, bootstrapPlugin, initiaPlugin],
   settings: {
     voice: {
       model: "en_US-male-medium",
