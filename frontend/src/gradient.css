@@ -1,0 +1,4 @@
+.text-gradient-pink {
+  @apply inline-block text-transparent bg-clip-text;
+  background-image: linear-gradient(90deg, #ffc312, #ff70af);
+}

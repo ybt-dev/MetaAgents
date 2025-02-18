@@ -1,0 +1,107 @@
+{
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/platform/src",
+  "monorepo": true,
+  "root": "apps/platform",
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "apps/platform/tsconfig.app.json"
+  },
+  "projects": {
+    "platform": {
+      "type": "application",
+      "root": "apps/platform",
+      "entryFile": "main",
+      "sourceRoot": "apps/platform/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/platform/tsconfig.app.json"
+      }
+    },
+    "database-tools": {
+      "type": "library",
+      "root": "libs/database-tools",
+      "sourceRoot": "libs/database-tools/src",
+      "compilerOptions": {
+          "tsConfigPath": "libs/database-tools/tsconfig.lib.json"
+      }
+    },
+    "date": {
+      "type": "library",
+      "root": "libs/date",
+      "entryFile": "index",
+      "sourceRoot": "libs/date/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/date/tsconfig.lib.json"
+      }
+    },
+    "health": {
+      "type": "library",
+      "root": "libs/health",
+      "entryFile": "index",
+      "sourceRoot": "libs/health/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/health/tsconfig.lib.json"
+      }
+    },
+    "logging": {
+      "type": "library",
+      "root": "libs/logging",
+      "entryFile": "index",
+      "sourceRoot": "libs/logging/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/logging/tsconfig.lib.json"
+      }
+    },
+    "mongodb-tools": {
+      "type": "library",
+      "root": "libs/mongodb-tools",
+      "sourceRoot": "libs/mongodb-tools/src",
+      "compilerOptions": {
+          "tsConfigPath": "libs/mongodb-tools/tsconfig.lib.json"
+      }
+    },
+    "mongodb-transactions": {
+      "type": "library",
+      "root": "libs/mongodb-transactions",
+      "entryFile": "index",
+      "sourceRoot": "libs/mongodb-transactions/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/mongodb-transactions/tsconfig.lib.json"
+      }
+    },
+    "transactions": {
+      "type": "library",
+      "root": "libs/transactions",
+      "entryFile": "index",
+      "sourceRoot": "libs/transactions/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/transactions/tsconfig.lib.json"
+      }
+    },
+    "types": {
+      "type": "library",
+      "root": "libs/types",
+      "entryFile": "index",
+      "sourceRoot": "libs/types/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/types/tsconfig.lib.json"
+      }
+    },
+    "validation": {
+      "type": "library",
+      "root": "libs/validation",
+      "sourceRoot": "libs/validation/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/validation/tsconfig.lib.json"
+      }
+    },
+    "jwt": {
+      "type": "library",
+      "root": "libs/jwt",
+      "sourceRoot": "libs/jwt/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/jwt/tsconfig.lib.json"
+      }
+    }
+  }
+}

@@ -1,0 +1,161 @@
+name: Deploy to ECS on Workflow Call
+on:
+  workflow_call:
+    inputs:
+      ENVIRONMENT:
+        description: Custom portal environment
+        required: true
+        type: string
+      SERVICE_TYPE:
+        description: Custom portal service type
+        required: true
+        type: string
+      LAUNCH_TYPE:
+        description: ECS Launch type
+        required: true
+        type: string
+      APP_NAME:
+        description: Custom portal name
+        required: true
+        type: string
+      AWS_SECRETS_LIST:
+        description: The list of custom portal aws secters
+        type: string
+      DOCKERFILE_PATH:
+        description: Path to Dockerfile
+        default: ./docker/Dockerfile.prod
+        type: string
+      DOCKER_CONTEXT:
+        description: Docker context
+        default: .
+        type: string
+      TASK_DEFINITION_PATH:
+        description: Path to task-definition file
+        default: .ecs/task-definition.json
+        type: string
+      SELF_HOSTED_RUNNER:
+        description: The name of self-hosted runner
+        default: ubuntu-latest
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_REGION:
+        required: true
+      ARN_EXECUTION_ROLE:
+        required: true
+      SECRET_ARN:
+        required: true
+      ECS_CLUSTER_NAME:
+        required: true
+      DOCKER_BUILD_ENVS:
+
+env:
+  ECR_REPOSITORY: ${{ inputs.APP_NAME }}-${{ inputs.SERVICE_TYPE }}
+  IMAGE_TAG: ${{ inputs.ENVIRONMENT }}-${{ github.sha }}
+
+jobs:
+  deployment:
+    runs-on: ${{ inputs.SELF_HOSTED_RUNNER }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Generate Dockerfile
+        run: |
+          while IFS= read -r line; do
+          if [[ $line == *"FROM"* ]]; then
+            new_line=$(echo -e "${line}\n${{ secrets.DOCKER_BUILD_ENVS }}")
+          else
+            new_line="$line"
+          fi
+          echo "$new_line" >> Dockerfile.tmp
+          done < ${{ inputs.DOCKERFILE_PATH }}
+          echo -e "$(cat Dockerfile.tmp)"
+
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/build-push-action@v3
+        with:
+          context: ${{ inputs.DOCKER_CONTEXT }}
+          cache-from: type=gha,scope=${{ inputs.ENVIRONMENT }}-${{ env.ECR_REPOSITORY }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.ENVIRONMENT }}-${{ env.ECR_REPOSITORY }}
+          push: true
+          file: Dockerfile.tmp
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+      - name: Generate task-definition secrets list
+        run: |
+          aws_secrets_list=$(echo "${{ inputs.AWS_SECRETS_LIST }}" | tr '\n' ' ')
+          formatted_secrets=""
+          IFS=' ' read -ra secrets_list <<< $aws_secrets_list
+          for secret in "${secrets_list[@]}"; do
+            formatted_secrets="{\"name\": \"$secret\",\"valueFrom\": \"${{ secrets.SECRET_ARN }}:$secret::\"},$formatted_secrets"
+          done
+          formatted_secrets="[${formatted_secrets%,}]"
+          echo $formatted_secrets
+          task_definition=$(cat ${{ inputs.TASK_DEFINITION_PATH }} | jq --argjson aws_secrets_list "$formatted_secrets" '.containerDefinitions[0].secrets += $aws_secrets_list')
+          echo "$task_definition" > ${{ inputs.TASK_DEFINITION_PATH }}
+
+      - name: Change task definition file
+        env:
+          ARN_EXECUTION_ROLE: ${{ secrets.ARN_EXECUTION_ROLE }}
+          CLOUD_WATCH_LOGS_NAME: /ecs/${{ inputs.APP_NAME }}-${{ inputs.ENVIRONMENT }}/${{ inputs.SERVICE_TYPE }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          CONTAINER_NAME: ${{ inputs.SERVICE_TYPE }}
+          FAMILY: ${{ inputs.SERVICE_TYPE }}-${{ inputs.APP_NAME }}-${{ inputs.ENVIRONMENT }}
+        run: |
+          envsubst < ${{ inputs.TASK_DEFINITION_PATH }} > formatted-task-definition.json
+          jq '.' formatted-task-definition.json
+
+      - name: Pass image to task task-definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: formatted-task-definition.json
+          container-name: ${{ inputs.SERVICE_TYPE }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ inputs.SERVICE_TYPE }}-service
+          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
+          wait-for-service-stability: false
+
+      - name: Check deploy status
+        run: |
+          DURATION=0
+          RETRY_INTERVAL=15
+          TIMEOUT_INTERVAL=600
+          DESCRIBE_SERVICES="aws ecs describe-services --cluster ${{ secrets.ECS_CLUSTER_NAME }} --services ${{ inputs.LAUNCH_TYPE }}-${{ inputs.SERVICE_TYPE }}-service"
+          echo "Start to deploy task-definition: $( $DESCRIBE_SERVICES --query 'services[0].taskDefinition' --output text)"
+          while [[ $( $DESCRIBE_SERVICES --query 'services[0].deployments[0].rolloutState' --output text) != "COMPLETED" ]]; do
+            if [[ $( $DESCRIBE_SERVICES --query 'services[0].deployments[0].failedTasks' --output text) != "0" ]]; then
+              FAILED_TASK_ARN=$(aws ecs list-tasks --cluster ${{ secrets.ECS_CLUSTER_NAME }} --desired-status STOPPED --region ${{ secrets.AWS_REGION }} --query 'taskArns[0]' --output text)
+              STOPPED_REASON=$(aws ecs describe-tasks --cluster ${{ secrets.ECS_CLUSTER_NAME }} --tasks $FAILED_TASK_ARN --region ${{ secrets.AWS_REGION }} --query 'tasks[0].stoppedReason' --output text)
+              echo "Deployment failed with stop reason: ${STOPPED_REASON}"
+              exit 1
+            fi
+            if [[ $DURATION -ge $TIMEOUT_INTERVAL ]]; then
+              echo "Deployment failed after timeout ${TIMEOUT_INTERVAL} seconds"
+              exit 1
+            fi
+            DURATION=$[${DURATION}+${RETRY_INTERVAL}]
+            echo "Deploy lasts ${DURATION} seconds"
+            sleep $RETRY_INTERVAL
+          done
+          echo "Deployment finished after ${DURATION} seconds"

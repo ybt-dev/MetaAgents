@@ -1,0 +1,87 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@libs/health": [
+        "./libs/health/src"
+      ],
+      "@libs/health/*": [
+        "./libs/health/src/*"
+      ],
+      "@libs/transactions": [
+        "./libs/transactions/src"
+      ],
+      "@libs/transactions/*": [
+        "./libs/transactions/src/*"
+      ],
+      "@libs/mongodb-transactions": [
+        "./libs/mongodb-transactions/src"
+      ],
+      "@libs/mongodb-transactions/*": [
+        "./libs/mongodb-transactions/src/*"
+      ],
+      "@libs/logging": [
+        "./libs/logging/src"
+      ],
+      "@libs/logging/*": [
+        "./libs/logging/src/*"
+      ],
+      "@libs/date": [
+        "./libs/date/src"
+      ],
+      "@libs/date/*": [
+        "./libs/date/src/*"
+      ],
+      "@libs/database-tools": [
+        "./libs/database-tools/src"
+      ],
+      "@libs/database-tools/*": [
+        "./libs/database-tools/src/*"
+      ],
+      "@libs/mongodb-tools": [
+        "./libs/mongodb-tools/src"
+      ],
+      "@libs/mongodb-tools/*": [
+        "./libs/mongodb-tools/src/*"
+      ],
+      "@libs/validation": [
+        "./libs/validation/src"
+      ],
+      "@libs/validation/*": [
+        "./libs/validation/src/*"
+      ],
+      "@libs/types": [
+        "./libs/types/src"
+      ],
+      "@libs/types/*": [
+        "./libs/types/src/*"
+      ],
+      "@libs/jwt": [
+        "./libs/jwt/src"
+      ],
+      "@libs/jwt/*": [
+        "./libs/jwt/src/*"
+      ],
+      "@apps/platform/*": [
+        "./apps/platform/src/*"
+      ]
+    }
+  }
+}

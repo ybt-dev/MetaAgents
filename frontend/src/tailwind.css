@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@import "./typography.css";
+@import "./gradient.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  @apply bg-white dark:bg-[#030712];
+
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+  }
+}
+
+html, body {
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  min-height: 100%;
+  width: 100%;
+  max-width: unset;
+}
+
+button {
+  &:not(:disabled) {
+    cursor: pointer;
+  }
+}
