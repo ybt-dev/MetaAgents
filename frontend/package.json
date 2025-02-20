@@ -10,8 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mysten/dapp-kit": "^0.14.50",
-    "@mysten/sui": "^1.21.2",
+    "@initia/initia.js": "^0.2.29",
+    "@initia/react-wallet-widget": "^0.200.0",
+    "@initia/wallet-widget": "^0.200.0",
     "@radix-ui/react-dialog": "^1.1.6",
     "@tailwindcss/vite": "^4.0.4",
     "@tanstack/react-query": "^5.66.0",

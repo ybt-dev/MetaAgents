@@ -12,24 +12,9 @@ import AgentTeamsRestApi from './api/AgentTeamsApi';
 import AgentsRestApi from './api/AgentsApi';
 import AgentTeamInteractionsRestApi from './api/AgentTeamInteractionsApi';
 import AgentMessagesRestApi from './api/AgentMessagesApi';
-
-import { getFullnodeUrl } from '@mysten/sui/client';
-import { createNetworkConfig, SuiClientProvider, WalletProvider } from '@mysten/dapp-kit';
+import { WalletWidgetProvider } from '@initia/react-wallet-widget';
 
 import './tailwind.css';
-import '@mysten/dapp-kit/dist/index.css';
-
-const { networkConfig } = createNetworkConfig({
-  devnet: {
-    url: getFullnodeUrl('devnet'),
-  },
-  testnet: {
-    url: getFullnodeUrl('testnet'),
-  },
-  mainnet: {
-    url: getFullnodeUrl('mainnet'),
-  },
-});
 
 function App() {
   const queryClient = useMemo(() => {
@@ -66,18 +51,16 @@ function App() {
 
   return (
     <BrowserRouter>
-      <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
-        <QueryClientProvider client={queryClient}>
-          <WalletProvider>
-            <ApiProvider value={services}>
-              <AppInitializer>
-                <Header />
-                <Routing />
-              </AppInitializer>
-            </ApiProvider>
-          </WalletProvider>
-        </QueryClientProvider>
-      </SuiClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <WalletWidgetProvider>
+          <ApiProvider value={services}>
+            <AppInitializer>
+              <Header />
+              <Routing />
+            </AppInitializer>
+          </ApiProvider>
+        </WalletWidgetProvider>
+      </QueryClientProvider>
       <ToastContainer
         pauseOnFocusLoss={false}
         pauseOnHover={false}

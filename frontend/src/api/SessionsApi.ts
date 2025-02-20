@@ -5,6 +5,7 @@ export interface CreateSessionParams {
   message: string;
   signature: string;
   nonce: string;
+  pubKey: string;
 }
 
 export interface SessionsApi {

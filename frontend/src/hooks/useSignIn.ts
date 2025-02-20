@@ -2,15 +2,10 @@ import useAsyncEffect from '@/hooks/useAsyncEffect';
 import useCreateSessionMutation from '@/hooks/mutations/useCreateSessionMutation';
 import useCreateSessionNonceMutation from '@/hooks/mutations/useCreateSessionNonceMutation';
 import useSession from '@/hooks/useSession';
-import { useCurrentAccount, useSignPersonalMessage } from '@mysten/dapp-kit';
-
-interface Signature {
-  signature: string;
-  bytes: string;
-}
+import { useWallet } from '@initia/react-wallet-widget';
 
 const useSignIn = () => {
-  const account = useCurrentAccount();
+  const { address, signArbitrary, account } = useWallet();
 
   const [currentUser] = useSession();
 
@@ -19,33 +14,28 @@ const useSignIn = () => {
   const { mutateAsync: createSessionNonce } = useCreateSessionNonceMutation();
   const { mutateAsync: createSession } = useCreateSessionMutation();
 
-  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
-
   useAsyncEffect(async () => {
-    if (!account?.address || currentUserId !== null) {
+    if (address.length > 0 || currentUserId !== null) {
       return;
     }
 
     try {
-      const nonce = await createSessionNonce(account?.address || '');
+      const nonce = await createSessionNonce(address || '');
 
       const message = new TextEncoder().encode('Sign in with Initia to the MetaAgents');
       const preparedMessage = 'Sign in with Initia to the MetaAgents';
 
-      // TODO Handle case with non loaded providers.
-      const res: Signature = (await signPersonalMessage({
-        message: message,
-      })) as unknown as Signature;
-
+      const hashedMsg = (await signArbitrary(message)) as string;
       await createSession({
-        signature: res.signature || '',
+        signature: hashedMsg || '',
         message: preparedMessage,
+        pubKey: account?.pubKey || '',
         nonce,
       });
     } catch (error) {
       console.error('Error signing in: ', error);
     }
-  }, [currentUserId, account?.address]);
+  }, [currentUserId, address]);
 };
 
 export default useSignIn;
