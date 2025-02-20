@@ -13,6 +13,7 @@ import {
   MessageValidatorService,
   SuiMessageValidatorService,
   EthMessageValidatorService,
+  InitiaMessageValidatorService,
 } from './services/message-validators';
 import SessionsModuleTokens from './sessions.module.tokens';
 
@@ -39,6 +40,7 @@ import SessionsModuleTokens from './sessions.module.tokens';
       useFactory: (
         suiMessageValidatorService: MessageValidatorService,
         ethMessageValidatorService: MessageValidatorService,
+        initiaMessageValidatorService: MessageValidatorService,
       ) => {
         return (authProvider: AuthProvider) => {
           switch (authProvider) {
@@ -48,10 +50,13 @@ import SessionsModuleTokens from './sessions.module.tokens';
             case AuthProvider.Sui: {
               return suiMessageValidatorService;
             }
+            case AuthProvider.Initia: {
+              return initiaMessageValidatorService;
+            }
           }
         };
       },
-      inject: [SuiMessageValidatorService, EthMessageValidatorService],
+      inject: [SuiMessageValidatorService, EthMessageValidatorService, InitiaMessageValidatorService],
     },
     {
       provide: SuiMessageValidatorService,
@@ -60,6 +65,10 @@ import SessionsModuleTokens from './sessions.module.tokens';
     {
       provide: EthMessageValidatorService,
       useClass: EthMessageValidatorService,
+    },
+    {
+      provide: InitiaMessageValidatorService,
+      useClass: InitiaMessageValidatorService,
     },
   ],
   exports: [SessionsModuleTokens.Services.SessionService],

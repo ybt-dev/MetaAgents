@@ -3,7 +3,7 @@ import * as elliptic from 'elliptic';
 import crypto from 'crypto';
 import { bech32 } from 'bech32';
 
-export class InitiahMessageValidatorService implements MessageValidatorService {
+export class InitiaMessageValidatorService implements MessageValidatorService {
   public async verify(message: string, signature: string, pubKey: string) {
     const decodedSignature = Buffer.from(signature, 'base64');
     const _pubKey = new Uint8Array(pubKey.split(',').map(Number));
