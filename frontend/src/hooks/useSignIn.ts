@@ -29,7 +29,7 @@ const useSignIn = () => {
       await createSession({
         signature: hashedMsg || '',
         message: preparedMessage,
-        pubKey: account?.pubKey || '',
+        pubKey: account?.pubKey.toString() || '',
         nonce,
       });
     } catch (error) {

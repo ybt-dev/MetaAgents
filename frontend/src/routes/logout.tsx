@@ -2,10 +2,10 @@ import { useNavigate } from 'react-router';
 import useLogoutMutation from '@/hooks/mutations/useLogoutMutation';
 import useAsyncEffect from '@/hooks/useAsyncEffect';
 import LoadingScreen from '@/components/LoadingScreen';
-import { useDisconnectWallet } from '@mysten/dapp-kit';
+import { useWallet } from '@initia/react-wallet-widget';
 
 const Logout = () => {
-  const { mutate: disconnect } = useDisconnectWallet();
+  const { disconnect } = useWallet();
   const { mutateAsync: logout } = useLogoutMutation();
   const navigate = useNavigate();
 
