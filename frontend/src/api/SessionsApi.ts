@@ -29,7 +29,7 @@ export default class SessionsRestApi implements SessionsApi {
   public async createSession(params: CreateSessionParams) {
     await this.client.makeCall(`/sessions`, 'POST', {
       ...params,
-      provider: 'sui',
+      provider: 'initia',
     });
   }
 

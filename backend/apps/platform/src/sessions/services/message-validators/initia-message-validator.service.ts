@@ -1,6 +1,6 @@
 import { MessageValidatorService } from './message-validator.service';
 import * as elliptic from 'elliptic';
-import crypto from 'crypto';
+import { createHash } from 'crypto';
 import { bech32 } from 'bech32';
 
 export class InitiaMessageValidatorService implements MessageValidatorService {
@@ -16,9 +16,9 @@ export class InitiaMessageValidatorService implements MessageValidatorService {
       s: decodedSignature.slice(32, 64).toString('hex'),
     };
 
-    const msgHash = await crypto.createHash('sha256').update(message).digest();
+    const msgHash = createHash('sha256').update(message).toString();
 
-    const success = await key.verify(msgHash, signatureObj);
+    const success = key.verify(msgHash, signatureObj);
 
     const address = this.getBech32Address(pubKey);
     return {
@@ -30,9 +30,9 @@ export class InitiaMessageValidatorService implements MessageValidatorService {
   private getBech32Address(pubKey: string): string {
     const pubKeyBytes = Buffer.from(pubKey.split(',').map(Number));
 
-    const sha256Hash = crypto.createHash('sha256').update(pubKeyBytes).digest();
+    const sha256Hash = createHash('sha256').update(pubKeyBytes).digest();
 
-    const ripemd160Hash = crypto.createHash('ripemd160').update(sha256Hash).digest();
+    const ripemd160Hash = createHash('ripemd160').update(sha256Hash).digest();
 
     const words = bech32.toWords(ripemd160Hash);
     return bech32.encode('init', words);

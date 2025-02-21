@@ -2,10 +2,11 @@ import useAsyncEffect from '@/hooks/useAsyncEffect';
 import useCreateSessionMutation from '@/hooks/mutations/useCreateSessionMutation';
 import useCreateSessionNonceMutation from '@/hooks/mutations/useCreateSessionNonceMutation';
 import useSession from '@/hooks/useSession';
-import { useWallet } from '@initia/react-wallet-widget';
+import { useAddress, useWallet } from '@initia/react-wallet-widget';
 
 const useSignIn = () => {
-  const { address, signArbitrary, account } = useWallet();
+  const { signArbitrary, account } = useWallet();
+  const address = useAddress();
 
   const [currentUser] = useSession();
 
@@ -15,7 +16,7 @@ const useSignIn = () => {
   const { mutateAsync: createSession } = useCreateSessionMutation();
 
   useAsyncEffect(async () => {
-    if (address.length > 0 || currentUserId !== null) {
+    if (!account || address.length == 0 || currentUserId !== null) {
       return;
     }
 
@@ -25,17 +26,17 @@ const useSignIn = () => {
       const message = new TextEncoder().encode('Sign in with Initia to the MetaAgents');
       const preparedMessage = 'Sign in with Initia to the MetaAgents';
 
-      const hashedMsg = (await signArbitrary(message)) as string;
+      const hashedMsg = await signArbitrary(message);
       await createSession({
         signature: hashedMsg || '',
         message: preparedMessage,
-        pubKey: account?.pubKey.toString() || '',
+        pubKey: account?.pubkey.toString() || '',
         nonce,
       });
     } catch (error) {
       console.error('Error signing in: ', error);
     }
-  }, [currentUserId, address]);
+  }, [currentUserId, account, address]);
 };
 
 export default useSignIn;
