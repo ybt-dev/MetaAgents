@@ -4,149 +4,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "child_process";
 
-// Move.toml template
-const MOVE_TOML_TEMPLATE = `[package]
-name = "{{packageName}}"
-version = "0.0.1"
-
-[dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet", override = true }
-
-[addresses]
-nft = "0x0"
-`;
-
-// Contract template with proper Sui Move syntax
-const CONTRACT_TEMPLATE = `module nft::nft_collection {
-    use sui::object::{Self, ID, UID};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
-    use sui::url::{Self, Url};
-    use sui::event;
-    use sui::package;
-    use std::string::{Self, String};
-
-    /// One-Time-Witness for the module
-    struct NFT_COLLECTION has drop {}
-
-    /// Event emitted when a new NFT is minted
-    struct NFTMinted has copy, drop {
-        object_id: ID,
-        creator: address,
-        name: String
-    }
-
-    /// The Collection capability
-    struct CollectionCap has key {
-        id: UID,
-        collection_id: ID
-    }
-
-    /// The Collection object
-    struct Collection has key {
-        id: UID,
-        name: String,
-        symbol: String,
-        description: String,
-        minted: u64,
-        max_supply: u64
-    }
-
-    /// The NFT object
-    struct NFT has key, store {
-        id: UID,
-        name: String,
-        description: String,
-        url: Url,
-        collection: ID
-    }
-
-    // ======= Error Constants =======
-    const EMaxSupplyReached: u64 = 0;
-    const EInvalidCollection: u64 = 1;
-
-    fun init(witness: NFT_COLLECTION, ctx: &mut TxContext) {
-        let publisher = package::claim(witness, ctx);
-        package::burn_publisher(publisher);
-    }
-
-    /// Create a new collection
-    public entry fun create_collection(
-        name: vector<u8>,
-        symbol: vector<u8>,
-        description: vector<u8>,
-        max_supply: u64,
-        ctx: &mut TxContext
-    ) {
-        let collection = Collection {
-            id: object::new(ctx),
-            name: string::utf8(name),
-            symbol: string::utf8(symbol),
-            description: string::utf8(description),
-            minted: 0,
-            max_supply
-        };
-
-        let collection_id = object::id(&collection);
-        
-        let cap = CollectionCap {
-            id: object::new(ctx),
-            collection_id
-        };
-
-        // Transfer the collection object
-        transfer::share_object(collection);
-        // Transfer the capability to the creator
-        transfer::transfer(cap, tx_context::sender(ctx));
-    }
-
-    /// Mint a new NFT
-    public entry fun mint_nft(
-        _cap: &CollectionCap,
-        collection: &mut Collection,
-        name: vector<u8>,
-        description: vector<u8>,
-        url: vector<u8>,
-        ctx: &mut TxContext
-    ) {
-        // Check max supply
-        assert!(collection.minted < collection.max_supply, EMaxSupplyReached);
-        
-        let nft = NFT {
-            id: object::new(ctx),
-            name: string::utf8(name),
-            description: string::utf8(description),
-            url: url::new_unsafe_from_bytes(url),
-            collection: object::id(collection)
-        };
-
-        collection.minted = collection.minted + 1;
-
-        // Emit mint event
-        event::emit(NFTMinted {
-            object_id: object::id(&nft),
-            creator: tx_context::sender(ctx),
-            name: nft.name
-        });
-
-        // Transfer NFT to the caller
-        transfer::transfer(nft, tx_context::sender(ctx));
-    }
-
-    // ======= View Functions =======
-    
-    /// Get collection info
-    public fun collection_info(collection: &Collection): (String, String, String, u64, u64) {
-        (
-            collection.name,
-            collection.symbol,
-            collection.description,
-            collection.minted,
-            collection.max_supply
-        )
-    }
-}`;
-
 interface MoveContractConfig {
   packageName: string;
   name: string;
@@ -162,37 +19,14 @@ export async function generateMoveContract(
   path: string;
   packagePath: string;
 }> {
+  // Use contracts_move directory instead of generating contract
   const currentDir = dirname(fileURLToPath(import.meta.url));
-  const packageDir = path.join(currentDir, "../contract", config.packageName);
+  const packageDir = path.join(currentDir, "../contract");
 
-  // Ensure package directory exists
-  if (!fs.existsSync(packageDir)) {
-    fs.mkdirSync(packageDir, { recursive: true });
-  }
-
-  // Create sources directory
-  const sourcesDir = path.join(packageDir, "sources");
-  if (!fs.existsSync(sourcesDir)) {
-    fs.mkdirSync(sourcesDir);
-  }
-
-  // Generate Move.toml
-  const moveToml = MOVE_TOML_TEMPLATE.replace(
-    /{{packageName}}/g,
-    config.packageName
-  );
-  fs.writeFileSync(path.join(packageDir, "Move.toml"), moveToml);
-
-  // Generate contract code
-  const contractPath = path.join(sourcesDir, "nft_collection.move");
-  const contractCode = CONTRACT_TEMPLATE;
-
-  // Write contract to file
-  fs.writeFileSync(contractPath, contractCode);
-
+  // Contract already exists, just return paths
   return {
-    code: contractCode,
-    path: contractPath,
+    code: fs.readFileSync(path.join(packageDir, "sources/nft.move"), "utf8"),
+    path: path.join(packageDir, "sources/nft.move"),
     packagePath: packageDir,
   };
 }
@@ -203,13 +37,16 @@ export async function compileMoveContract(packagePath: string): Promise<{
   error?: string;
 }> {
   try {
-    // Ensure sui CLI is installed
-    const suiVersion = execSync("sui --version").toString();
-    console.log("Sui version:", suiVersion);
+    // Check if build directory exists
+    const buildDir = path.join(packagePath, "build");
+    if (!fs.existsSync(buildDir)) {
+      fs.mkdirSync(buildDir, { recursive: true });
+    }
 
-    // Compile the contract
-    const output = execSync(`sui move build --path ${packagePath}`, {
+    // Compile using initiad move build
+    const output = execSync(`initiad move build`, {
       encoding: "utf8",
+      cwd: packagePath, // Execute in the package directory
     });
 
     return {
@@ -225,60 +62,145 @@ export async function compileMoveContract(packagePath: string): Promise<{
   }
 }
 
-export async function publishMoveContract(packagePath: string): Promise<{
+async function queryTxWithRetries(
+  txHash: string,
+  maxRetries = 10,
+  retryDelay = 2000
+): Promise<any> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      console.log(`Attempting to query tx (attempt ${i + 1}/${maxRetries})...`);
+      const txInfoCommand = `initiad query tx ${txHash} --node https://rpc.testnet.initia.xyz:443 -o json`;
+      const txInfoOutput = execSync(txInfoCommand, { encoding: "utf8" });
+      return JSON.parse(txInfoOutput);
+    } catch (error) {
+      if (i === maxRetries - 1) throw error;
+      console.log(
+        `Transaction not found yet, waiting ${retryDelay / 1000} seconds...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    }
+  }
+  throw new Error("Max retries reached while querying transaction");
+}
+
+export async function publishMoveContract(
+  packagePath: string,
+  wallet: string,
+  passphrase: string
+): Promise<{
   success: boolean;
   packageId?: string;
   output?: string;
   error?: string;
 }> {
   try {
-    const output = execSync(
-      `sui client publish ${packagePath} --gas-budget 100000000 --json`,
-      {
-        encoding: "utf8",
-      }
-    );
+    const command = `echo "${passphrase}" | initiad move deploy \
+      --from ${wallet} \
+      --node https://rpc.testnet.initia.xyz:443 \
+      --chain-id initiation-2 \
+      --gas auto \
+      --gas-prices 0.015uinit \
+      -o json \
+      -y`;
 
-    // Parse JSON output
-    const result = JSON.parse(output);
+    const output = execSync(command, {
+      encoding: "utf8",
+      cwd: packagePath,
+    });
 
-    // Extract package ID from effects
-    const effects = result.effects;
-    const created = effects?.created || [];
-    const packageId = created.find((obj: any) => obj.owner === "Immutable")
-      ?.reference?.objectId;
+    console.log("Raw deployment output:", output);
 
-    if (!packageId) {
+    let result;
+    try {
+      result = JSON.parse(output);
+      console.log("Parsed result:", JSON.stringify(result, null, 2));
+    } catch (parseError) {
       return {
         success: false,
-        error: "Could not find package ID in transaction output",
+        error: "Failed to parse deployment output",
         output,
       };
     }
 
+    // Get the transaction hash
+    const txHash = result.txhash;
+    if (!txHash) {
+      return {
+        success: false,
+        error: "Could not find transaction hash in output",
+        output: JSON.stringify(result, null, 2),
+      };
+    }
+
+    console.log("Transaction hash:", txHash);
+    console.log("Waiting for transaction to be included in a block...");
+
+    // Query transaction with retries
+    const txInfo = await queryTxWithRetries(txHash);
+    console.log("Transaction info:", JSON.stringify(txInfo, null, 2));
+
+    // Find the ModulePublishedEvent in the events
+    const modulePublishedEvent = txInfo.events?.find(
+      (e) =>
+        e.type === "move" &&
+        e.attributes?.find((a) => a.key === "type_tag")?.value ===
+          "0x1::code::ModulePublishedEvent"
+    );
+
+    if (modulePublishedEvent) {
+      const dataAttribute = modulePublishedEvent.attributes.find(
+        (a) => a.key === "data"
+      );
+      if (dataAttribute) {
+        const eventData = JSON.parse(dataAttribute.value);
+        const moduleId = eventData.module_id;
+        if (moduleId) {
+          return {
+            success: true,
+            packageId: moduleId,
+            output: JSON.stringify(txInfo, null, 2),
+          };
+        }
+      }
+    }
+
     return {
-      success: true,
-      packageId,
-      output,
+      success: false,
+      error: "Could not find package ID in transaction info",
+      output: JSON.stringify(txInfo, null, 2),
     };
   } catch (error) {
     console.error("Error publishing Move contract:", error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
     };
   }
 }
 
-export async function getContractABI(packageId: string): Promise<any> {
+export async function getContractABI(
+  packageId: string,
+  moduleName: string
+): Promise<any> {
   try {
-    const output = execSync(`sui client object ${packageId}`, {
-      encoding: "utf8",
-    });
+    const output = execSync(
+      `initiad query move module ${packageId} ${moduleName} --node https://rpc.testnet.initia.xyz`,
+      { encoding: "utf8" }
+    );
 
     // Parse the output to get module interface
-    const abiData = JSON.parse(output);
-    return abiData;
+    const result = JSON.parse(output);
+
+    // The ABI is stored as a JSON string within the module.abi field
+    const abiData = JSON.parse(result.module.abi);
+
+    return {
+      abi: abiData,
+      address: result.module.address,
+      moduleName: result.module.module_name,
+      upgradePolicy: result.module.upgrade_policy,
+    };
   } catch (error) {
     console.error("Error getting contract ABI:", error);
     throw error;
@@ -286,77 +208,66 @@ export async function getContractABI(packageId: string): Promise<any> {
 }
 
 interface MintNFTParams {
-  collectionId: string;
-  collectionCap: string;
+  collectionName: string;
   name: string;
   description: string;
-  url: string;
+  imageUrl: string;
+  contentBytes: string;
+  amount: number;
 }
 
 export async function mintNFT(
   packageId: string,
-  params: MintNFTParams
+  params: MintNFTParams,
+  wallet: string,
+  passphrase: string
 ): Promise<{
   success: boolean;
+  nftId?: string;
   transactionId?: string;
   error?: string;
-  nftId?: string;
 }> {
   try {
-    // Pre-compute hex values
-    const nameHex = Buffer.from(params.name).toString("hex");
-    const descriptionHex = Buffer.from(params.description).toString("hex");
-    const urlHex = Buffer.from(params.url).toString("hex");
+    const [moduleAddress, moduleName] = packageId.split("::");
 
-    // Construct command using array join
-    const command = [
-      "sui client call",
-      `--package ${packageId}`,
-      "--module nft_collection",
-      "--function mint_nft",
-      "--args",
-      `"${params.collectionCap}"`, // CollectionCap object ID
-      `"${params.collectionId}"`, // Collection object ID
-      `"0x${nameHex}"`, // NFT name as hex
-      `"0x${descriptionHex}"`, // NFT description as hex
-      `"0x${urlHex}"`, // NFT URL as hex
-      "--gas-budget 100000000",
-      "--json",
-    ].join(" ");
+    // Format the content bytes
+    const formattedContentBytes = params.contentBytes.startsWith("0x")
+      ? params.contentBytes.slice(2)
+      : params.contentBytes;
 
-    console.log("Executing mint command:", command);
+    const command = `echo "${passphrase}" | initiad tx move execute \
+      ${moduleAddress} \
+      ${moduleName} \
+      create_nft \
+      --args '["string:${params.collectionName}","string:${params.name}","string:${params.description}","string:${params.imageUrl}","vector<u8>:${formattedContentBytes}","u64:${params.amount}"]' \
+      --from ${wallet} \
+      --gas auto \
+      --gas-adjustment 1.5 \
+      --gas-prices 0.015uinit \
+      --node https://rpc.testnet.initia.xyz \
+      --chain-id initiation-2 \
+      -o json \
+      -y`;
 
     const output = execSync(command, {
       encoding: "utf8",
     });
 
-    // Parse JSON output
     const result = JSON.parse(output);
-    console.log("Mint result:", JSON.stringify(result, null, 2));
+    const txId = result.txhash;
+    const nftId = result.nft_id;
 
-    // Extract transaction ID and NFT ID from effects
-    const txId = result.digest;
-    const objectChanges = result.objectChanges || [];
-
-    // Find the newly created NFT object
-    const nftObject = objectChanges.find(
-      (obj: any) =>
-        obj.type === "created" &&
-        obj.objectType?.includes("::nft_collection::NFT")
-    );
-
-    if (!nftObject) {
+    if (!txId) {
       return {
         success: false,
-        error: "Could not find NFT object in transaction output",
-        transactionId: txId,
+        error: "Could not find transaction ID in output",
       };
     }
 
     return {
       success: true,
+      nftId,
       transactionId: txId,
-      nftId: nftObject.objectId,
     };
   } catch (error) {
     console.error("Error minting NFT:", error);
@@ -369,9 +280,10 @@ export async function mintNFT(
 
 export async function getNFTInfo(nftId: string): Promise<any> {
   try {
-    const output = execSync(`sui client object ${nftId} --json`, {
-      encoding: "utf8",
-    });
+    const output = execSync(
+      `initiad query move object ${nftId} --node https://rpc.testnet.initia.xyz`,
+      { encoding: "utf8" }
+    );
 
     const result = JSON.parse(output);
 
@@ -390,10 +302,10 @@ export async function getNFTInfo(nftId: string): Promise<any> {
 
 export async function getTransactionInfo(transactionId: string): Promise<any> {
   try {
-    // Updated command to use tx-block instead of transaction
-    const output = execSync(`sui client tx-block ${transactionId} --json`, {
-      encoding: "utf8",
-    });
+    const output = execSync(
+      `initiad query tx ${transactionId} --node https://rpc.testnet.initia.xyz`,
+      { encoding: "utf8" }
+    );
 
     return JSON.parse(output);
   } catch (error) {
@@ -405,89 +317,58 @@ export async function getTransactionInfo(transactionId: string): Promise<any> {
 interface CreateCollectionParams {
   packageId: string;
   name: string;
-  symbol: string;
   description: string;
+  uri: string;
   maxSupply: number;
-}
-
-interface CreateCollectionResult {
-  success: boolean;
-  collectionId?: string;
-  collectionCap?: string;
-  error?: string;
-  output?: any;
+  wallet: string;
 }
 
 export async function createCollection(
-  params: CreateCollectionParams
-): Promise<CreateCollectionResult> {
+  params: CreateCollectionParams & { passphrase: string }
+): Promise<{
+  success: boolean;
+  transactionId?: string;
+  error?: string;
+  collectionId?: string;
+}> {
   try {
-    // Pre-compute hex values
-    const nameHex = Buffer.from(params.name).toString("hex");
-    const symbolHex = Buffer.from(params.symbol).toString("hex");
-    const descriptionHex = Buffer.from(params.description || "").toString(
-      "hex"
-    );
+    // Split the packageId into address and module name
+    const [moduleAddress, moduleName] = params.packageId.split("::");
 
-    // Construct command using array join
-    const command = [
-      "sui client call",
-      `--package ${params.packageId}`,
-      "--module nft_collection",
-      "--function create_collection",
-      "--args",
-      `"0x${nameHex}"`,
-      `"0x${symbolHex}"`,
-      `"0x${descriptionHex}"`,
-      `"${params.maxSupply}"`,
-      "--gas-budget 100000000",
-      "--json",
-    ].join(" ");
-
-    console.log("Executing create collection command:", command);
+    // Update the argument order to match the Move contract
+    const command = `echo "${params.passphrase}" | initiad tx move execute \
+      ${moduleAddress} \
+      ${moduleName} \
+      create_collection \
+      --args '["string:${params.name}","string:${params.description}","string:${params.uri}","u64:${params.maxSupply}"]' \
+      --from ${params.wallet} \
+      --gas auto \
+      --gas-adjustment 1.5 \
+      --gas-prices 0.015uinit \
+      --node https://rpc.testnet.initia.xyz \
+      --chain-id initiation-2 \
+      -o json \
+      -y`;
 
     const output = execSync(command, {
       encoding: "utf8",
     });
 
     const result = JSON.parse(output);
+    const txId = result.txhash;
+    const collectionId = result.collection_id;
 
-    // Extract collection ID and cap from the objectChanges array
-    const objectChanges = result.objectChanges || [];
-
-    // Find Collection and CollectionCap objects
-    const collectionObject = objectChanges.find((obj: any) =>
-      obj.objectType?.includes("::nft_collection::Collection")
-    );
-
-    const collectionCapObject = objectChanges.find((obj: any) =>
-      obj.objectType?.includes("::nft_collection::CollectionCap")
-    );
-
-    if (!collectionObject || !collectionCapObject) {
+    if (!txId) {
       return {
         success: false,
-        error: "Failed to find Collection or CollectionCap objects",
-        output: result,
-      };
-    }
-
-    const collectionId = collectionObject.objectId;
-    const collectionCap = collectionCapObject.objectId;
-
-    if (!collectionId || !collectionCap) {
-      return {
-        success: false,
-        error: "Failed to extract collection ID or capability",
-        output: result,
+        error: "Could not find transaction ID in output",
       };
     }
 
     return {
       success: true,
+      transactionId: txId,
       collectionId,
-      collectionCap,
-      output: result,
     };
   } catch (error) {
     console.error("Error creating collection:", error);

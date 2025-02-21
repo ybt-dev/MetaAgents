@@ -2,114 +2,92 @@ import {
   generateMoveContract,
   compileMoveContract,
   publishMoveContract,
-  mintNFT,
-  getNFTInfo,
-  getTransactionInfo,
   createCollection,
+  mintNFT,
 } from "../utils/generateMoveContractCode.ts";
 
-async function testContractDeployment() {
+async function main() {
   try {
-    console.log("Starting contract deployment test...");
+    const WALLET = "my-wallet";
+    const PASSPHRASE = "";
 
-    // 1. Generate contract
-    const config = {
-      packageName: "test_nft_collection",
-      name: "TestNFTCollection",
-      symbol: "TNFT",
+    // 1. Generate/Get Contract
+    console.log("Generating/Getting Contract...");
+    const contract = await generateMoveContract({
+      packageName: "nft_collection_test_plugin_test_2",
+      name: "Test Collection",
+      symbol: "TEST",
       description: "Test NFT Collection",
-      maxSupply: 1000,
-    };
+      maxSupply: 100,
+    });
+    console.log("Contract path:", contract.path);
 
-    console.log("Generating contract...");
-    const { code, path, packagePath } = await generateMoveContract(config);
-    console.log("Contract generated at:", path);
-    console.log("Package path:", packagePath);
-
-    // 2. Compile contract
-    console.log("\nCompiling contract...");
-    const {
-      compiled,
-      output: compileOutput,
-      error: compileError,
-    } = await compileMoveContract(packagePath);
-
-    if (!compiled) {
-      throw new Error(`Compilation failed: ${compileError}`);
+    // 2. Compile Contract
+    console.log("\nCompiling Contract...");
+    const compilationResult = await compileMoveContract(contract.packagePath);
+    if (!compilationResult.compiled) {
+      throw new Error(`Compilation failed: ${compilationResult.error}`);
     }
     console.log("Compilation successful!");
-    if (compileOutput) console.log("Compile output:", compileOutput);
 
-    // 3. Publish contract
-    console.log("\nPublishing contract...");
-    const {
-      success,
-      packageId,
-      output: publishOutput,
-      error: publishError,
-    } = await publishMoveContract(packagePath);
-
-    if (!success || !packageId) {
-      throw new Error(
-        `Publication failed: ${publishError}\nOutput: ${publishOutput}`
-      );
+    // 3. Publish Contract
+    console.log("\nPublishing Contract...");
+    const publishResult = await publishMoveContract(
+      contract.packagePath,
+      WALLET,
+      PASSPHRASE
+    );
+    if (!publishResult.success) {
+      throw new Error(`Publishing failed: ${publishResult.error}`);
     }
+    console.log("Package ID:", publishResult.packageId);
 
-    console.log("Contract published successfully!");
-    console.log("Package ID:", packageId);
-
-    // 4. Create collection
-    console.log("\nCreating collection...");
-    const createCollectionResult = await createCollection({
-      packageId,
-      name: config.name,
-      symbol: config.symbol,
-      description: config.description || "",
-      maxSupply: config.maxSupply,
+    // 4. Create Collection
+    console.log("\nCreating Collection...");
+    const collectionResult = await createCollection({
+      packageId: publishResult.packageId!,
+      name: "Test Collection",
+      description: "Test NFT Collection",
+      uri: "'https//example.com/collection'",
+      maxSupply: 100,
+      wallet: WALLET,
+      passphrase: PASSPHRASE,
     });
-
-    if (!createCollectionResult.success) {
-      throw new Error(
-        `Failed to create collection: ${createCollectionResult.error}`
-      );
+    if (!collectionResult.success) {
+      throw new Error(`Collection creation failed: ${collectionResult.error}`);
     }
+    console.log("Collection ID:", collectionResult.collectionId);
+    console.log("Transaction ID:", collectionResult.transactionId);
 
-    console.log("\nCollection created successfully:");
-    console.log("Collection ID:", createCollectionResult.collectionId);
-    console.log("Collection Cap:", createCollectionResult.collectionCap);
+    // Wait a few seconds for the collection to be created
+    console.log("Waiting for collection creation to be confirmed...");
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
-    // 5. Test minting
-    console.log("\nTesting NFT minting...");
-    const mintParams = {
-      collectionId: createCollectionResult.collectionId!,
-      collectionCap: createCollectionResult.collectionCap!,
-      name: "Test NFT #1",
-      description: "Test NFT",
-      url: "https://example.com/nft/1.png",
-    };
-
-    console.log("Minting with params:", JSON.stringify(mintParams, null, 2));
-    const mintResult = await mintNFT(packageId, mintParams);
-
+    // 5. Mint NFT
+    console.log("\nMinting NFT...");
+    const mintResult = await mintNFT(
+      publishResult.packageId!,
+      {
+        collectionName: "Test Collection",
+        name: "Test NFT #1",
+        description: "My first test NFT",
+        imageUrl: "'https//example.com/nft1.jpg'",
+        contentBytes: "1",
+        amount: 1,
+      },
+      WALLET,
+      PASSPHRASE
+    );
     if (!mintResult.success) {
-      console.error("Minting failed:", mintResult.error);
-      throw new Error(`NFT minting failed: ${mintResult.error}`);
+      throw new Error(`Minting failed: ${mintResult.error}`);
     }
-
-    console.log("NFT minted successfully!");
     console.log("NFT ID:", mintResult.nftId);
     console.log("Transaction ID:", mintResult.transactionId);
-
-    // Get NFT and transaction info
-    const nftInfo = await getNFTInfo(mintResult.nftId!);
-    console.log("\nNFT Info:", JSON.stringify(nftInfo, null, 2));
-
-    const txInfo = await getTransactionInfo(mintResult.transactionId!);
-    console.log("\nTransaction Info:", JSON.stringify(txInfo, null, 2));
   } catch (error) {
-    console.error("Test failed:", error);
+    console.error("Error:", error);
   }
 }
 
-// Run the test
-testContractDeployment();
+main();
+
+// npx tsx eliza-starter/src/plugin/nftPlugin/tests/test-contract.ts

@@ -1,4 +1,4 @@
-module nft_collection::nft_12 {
+module nft_collection::nft_collection_test_plugin_test_4 {
     use std::signer;
     use std::string::String;
     use std::vector;
@@ -150,4 +150,4 @@ module nft_collection::nft_12 {
             collection.total_minted
         )
     }
-} 
+}
