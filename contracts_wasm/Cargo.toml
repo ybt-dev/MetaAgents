@@ -1,0 +1,54 @@
+[package]
+name = "nft-contract"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cosmwasm-std = "1.1"
+cw-storage-plus = "1.0"
+cw2 = "1.0"
+cw721 = "0.16"
+cw721-base = { version = "0.16", features = ["library"] }
+schemars = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
+
+[dev-dependencies]
+cosmwasm-schema = "1.1" 
+
+
+[features]
+library = []
+
+
+#RUSTFLAGS='-C link-arg=-s' cargo wasm build
+# Set the chain ID
+#initiad config set client chain-id testnet-1
+
+# Set the RPC node
+#initiad config set client node https://initia-testnet-rpc.polkachu.com:443
+
+# Verify your settings
+#initiad config get client chain-id
+#initiad config get client node
+
+#Test address
+
+#address: init1z8jakgprua59h87wmchn4hurxa28wcwq6yj0mh
+#  name: my-wallet
+#  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"Ak2PH4bnD8jFnG1SShVCxBo5NBZW8gMvl/xk2KfnwBx2"}'
+#  type: local
+
+
+# balance 
+#initiad query bank balances init1z8jakgprua59h87wmchn4hurxa28wcwq6yj0mh
+
+
+# address: wasm1dtdacjk7v6gyzrmxtuyxj70lfyc0xved357hpl
+#  name: new-wallet
+#  pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A8pF/8MG9M5+JriW1zhTOi4nhjoJjLa8W7pw7KQsZg1b"}'
+#  type: local
+
