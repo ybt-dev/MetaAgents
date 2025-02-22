@@ -3,13 +3,18 @@ name = "nft_collection"
 version = "0.0.1"
 
 [dependencies]
-InitiaStdlib = { git = "https://github.com/initia-labs/move-natives.git", subdir = "initia_stdlib", rev = "v0.6.1"}
+InitiaStdlib = { git = "https://github.com/initia-labs/move-natives.git", subdir = "initia_stdlib", rev = "v0.6.1" }
 
 [addresses]
 std = "0x1"
-nft_collection = "0x11e5db2023e7685b9fcede2f3adf8337547761c0"
+nft_collection = "_"
 initia_std = "0x1"
 
+[dev-addresses]
+nft_collection = "0x11e5db2023e7685b9fcede2f3adf8337547761c0"
+
+
+# initiad move build --named-addresses nft_collection=0x11e5db2023e7685b9fcede2f3adf8337547761c0
 
 #address: init1z8jakgprua59h87wmchn4hurxa28wcwq6yj0mh
 #  name: my-wallet
@@ -19,31 +24,7 @@ initia_std = "0x1"
 # Command examples:
 
 # Deploy the contract
-#initiad move deploy --from my-wallet --node https://rpc.testnet.initia.xyz:443 --chain-id initiation-2 --gas auto --gas-prices 0.015uinit --build
-
-# Create a collection
-#initiad tx move execute 0x11e5db2023e7685b9fcede2f3adf8337547761c0 nft_12 create_collection --args '["string:My Collection Description", "string:My Collection", "string:https//my-collection-uri.com", "u64:500"]' --from my-wallet --gas auto --gas-adjustment 1.5 --gas-prices 0.015uinit --node https://rpc.testnet.initia.xyz --chain-id initiation-2
-
-# Create an NFT
-#initiad tx move execute 0x11e5db2023e7685b9fcede2f3adf8337547761c0 nft_12 create_nft --args '["string:My Collection", "string:My First NFT", "string:A beautiful NFT", "string:https//my-nft-image.com", "vector<u8>:123", "u64:1"]' --from my-wallet --gas auto --gas-adjustment 1.5 --gas-prices 0.015uinit --node https://rpc.testnet.initia.xyz --chain-id initiation-2
-
-# Query the module
-#initiad query move module 0x11e5db2023e7685b9fcede2f3adf8337547761c0 nft_12 --node https://rpc.testnet.initia.xyz
-
-# Query NFTs by account
-#curl https://api.testnet.initia.xyz/indexer/nft/v1/tokens/by_account/0x11e5db2023e7685b9fcede2f3adf8337547761c0
-
-#initiad query move resources 0x11e5db2023e7685b9fcede2f3adf8337547761c0 --node https://rpc.testnet.initia.xyz
-
-#initiad query move resource 0x11e5db2023e7685b9fcede2f3adf8337547761c0 "0x11e5db2023e7685b9fcede2f3adf8337547761c0::nft_12::Collection" --node https://rpc.testnet.initia.xyz
-
-#initiad move deploy --upgrade-policy COMPATIBLE --from my-wallet --gas auto --gas-adjustment 1.5 --gas-prices 0.015uinit --node https://rpc.testnet.initia.xyz --chain-id initiation-2
-
-#address: init1z8jakgprua59h87wmchn4hurxa28wcwq6yj0mh name: my-wallet pubkey: '{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"Ak2PH4bnD8jFnG1SShVCxBo5NBZW8gMvl/xk2KfnwBx2"}' type: local
-
-#initiad query move modules 0x11e5db2023e7685b9fcede2f3adf8337547761c0 --node https://rpc.testnet.initia.xyz
-
-#initiad tx move execute 0x11e5db2023e7685b9fcede2f3adf8337547761c0 fag create_collection --args '["string:My Collection", "u64:100", "string:my_collection_test", "string:www.my-uri.com", "bool:true", "bool:true", "bool:true", "bool:true", "u64:5"]' --from my-wallet --gas auto --gas-adjustment 1.5 --gas-prices 0.015uinit --node https://rpc.testnet.initia.xyz --chain-id initiation-2
+#initiad move deploy --upgrade-policy COMPATIBLE --from my-wallet --node https://rpc.testnet.initia.xyz:443 --chain-id initiation-2 --gas auto --gas-prices 0.015uinit --build --dev
 
 # balance 
 #initiad query bank balances init1z8jakgprua59h87wmchn4hurxa28wcwq6yj0mh
