@@ -29,12 +29,11 @@
     "@elizaos/plugin-node": "0.1.7",
     "@elizaos/plugin-tee": "0.25.6-alpha.1",
     "@elizaos/plugin-web-search": "0.1.7",
-    "@initia/initia.js": "^0.2.29",
+    "@initia/initia.js": "^0.2.30",
     "@lifi/types": "^16.8.0",
     "@mysten/sui": "^1.21.2",
     "@openzeppelin/contracts": "^5.2.0",
     "@tavily/core": "^0.0.2",
-    "@types/node": "^22.13.1",
     "agent-twitter-client": "0.0.18",
     "ai": "4.0.3",
     "amqplib": "^0.10.5",
@@ -43,6 +42,7 @@
     "bignumber.js": "^9.1.2",
     "bn.js": "^5.2.1",
     "body-parser": "^1.20.3",
+    "child_process": "^1.0.2",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
     "ethers": "^5.7.2",
@@ -70,9 +70,11 @@
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
+    "@types/node": "^22.13.5",
     "ts-node": "10.9.2",
     "tsup": "^8.3.5",
-    "typescript": "^5.6.3"
+    "tsx": "4.19.3",
+    "typescript": "^5.7.3"
   },
   "pnpm": {
     "ignoredBuiltDependencies": [
