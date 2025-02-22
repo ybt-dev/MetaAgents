@@ -5,8 +5,9 @@ import {
 
 async function main() {
   try {
-    const MNEMONIC = "your mnemonic phrase here";
-    const WALLET = "init1ge3s4l73rgrqvszup9uzyqhgxkqke9jjkt9ndg";
+    const MNEMONIC =
+      "access tail move oak since off outdoor ticket donkey fantasy guitar beach rent fish hand effort rose use uniform magic junk stomach armed concert";
+    const WALLET = "init1yd8syn5tkyexn8sjnr2lg7wh9hlqe3suv5md4q";
 
     // 1. Create Collection
     console.log("\nCreating Collection...");
@@ -17,6 +18,7 @@ async function main() {
       maxSupply: 100,
       wallet: WALLET,
       mnemonic: MNEMONIC,
+      royalty: 5,
     });
 
     if (!collectionResult.success) {

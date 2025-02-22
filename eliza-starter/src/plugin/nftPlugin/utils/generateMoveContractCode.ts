@@ -69,6 +69,7 @@ interface CreateCollectionParams {
   description: string;
   uri: string;
   maxSupply: number;
+  royalty: number;
   wallet: string;
 }
 
@@ -98,7 +99,7 @@ export async function createCollection(
     const descriptionBytes = btoa(params.description);
     const uriBytes = btoa(params.uri);
     const maxSupplyBytes = btoa(params.maxSupply.toString());
-    const royaltyBytes = btoa("5"); // 5% royalty
+    const royaltyBytes = btoa(params.royalty.toString());
 
     const msg = new MsgExecute(
       key.accAddress,
