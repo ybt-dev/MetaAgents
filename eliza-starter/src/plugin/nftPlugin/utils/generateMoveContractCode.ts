@@ -1,18 +1,30 @@
-import { LCDClient, Wallet, MnemonicKey, MsgExecute } from "@initia/initia.js";
+import {
+  LCDClient,
+  Wallet,
+  MnemonicKey,
+  MsgExecute,
+  bcs,
+} from "@initia/initia.js";
 
 interface MintNFTParams {
   collectionName: string;
   name: string;
   description: string;
   imageUrl: string;
-  contentBytes: string;
-  amount: number;
+  wallet: string;
+  mnemonic: string;
 }
 
-export async function mintNFT(
-  params: MintNFTParams,
-  mnemonic: string
-): Promise<{
+interface CreateCollectionParams {
+  name: string;
+  description: string;
+  uri: string;
+  maxSupply: number;
+  royalty: number;
+  wallet: string;
+}
+
+export async function mintNFT(params: MintNFTParams): Promise<{
   success: boolean;
   transactionId?: string;
   error?: string;
@@ -25,7 +37,7 @@ export async function mintNFT(
     });
 
     const key = new MnemonicKey({
-      mnemonic: mnemonic,
+      mnemonic: params.mnemonic,
     });
 
     const wallet = new Wallet(lcd, key);
@@ -37,11 +49,11 @@ export async function mintNFT(
       "mint_nft",
       undefined,
       [
-        btoa(params.collectionName),
-        btoa(params.name),
-        btoa(params.description),
-        btoa(params.imageUrl),
-        btoa(wallet.key.accAddress),
+        bcs.string().serialize(params.collectionName).toBase64(),
+        bcs.string().serialize(params.name).toBase64(),
+        bcs.string().serialize(params.description).toBase64(),
+        bcs.string().serialize(params.imageUrl).toBase64(),
+        bcs.address().serialize(params.wallet).toBase64(),
       ]
     );
 
@@ -50,6 +62,13 @@ export async function mintNFT(
     });
 
     const result = await lcd.tx.broadcast(signedTx);
+
+    if (!result.txhash) {
+      return {
+        success: false,
+        error: "Could not find transaction ID in output",
+      };
+    }
 
     return {
       success: true,
@@ -62,15 +81,6 @@ export async function mintNFT(
       error: error instanceof Error ? error.message : String(error),
     };
   }
-}
-
-interface CreateCollectionParams {
-  name: string;
-  description: string;
-  uri: string;
-  maxSupply: number;
-  royalty: number;
-  wallet: string;
 }
 
 export async function createCollection(
@@ -94,20 +104,19 @@ export async function createCollection(
 
     const wallet = new Wallet(lcd, key);
 
-    // Convert parameters to base64 encoded strings
-    const nameBytes = btoa(params.name);
-    const descriptionBytes = btoa(params.description);
-    const uriBytes = btoa(params.uri);
-    const maxSupplyBytes = btoa(params.maxSupply.toString());
-    const royaltyBytes = btoa(params.royalty.toString());
-
     const msg = new MsgExecute(
       key.accAddress,
       "0x11e5db2023e7685b9fcede2f3adf8337547761c0",
       "metaAgents_nft_module",
       "create_collection",
       undefined,
-      [nameBytes, descriptionBytes, uriBytes, maxSupplyBytes, royaltyBytes]
+      [
+        bcs.string().serialize(params.name).toBase64(),
+        bcs.string().serialize(params.description).toBase64(),
+        bcs.string().serialize(params.uri).toBase64(),
+        bcs.u64().serialize(params.maxSupply).toBase64(),
+        bcs.u64().serialize(params.royalty).toBase64(),
+      ]
     );
 
     const signedTx = await wallet.createAndSignTx({
