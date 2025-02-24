@@ -11,8 +11,10 @@ import {
 } from "@elizaos/core";
 import { mintNFTTemplate } from "../templates/index.ts";
 import { type MintNFTContent, MintNFTSchema } from "../types/index.ts";
-import { LCDClient } from "@initia/initia.js";
+import pkg from "@initia/initia.js";
 import { mintNFT } from "../utils/generateMoveContractCode.ts";
+
+const { LCDClient } = pkg;
 
 function isMintNFTContent(content: any): content is MintNFTContent {
   return (
@@ -23,7 +25,7 @@ function isMintNFTContent(content: any): content is MintNFTContent {
 }
 
 export class MintNFTAction {
-  private lcd: LCDClient;
+  private lcd: InstanceType<typeof LCDClient>;
 
   constructor(private runtime: IAgentRuntime) {
     if (!runtime.getSetting("INITIA_MNEMONIC")) {

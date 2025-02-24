@@ -11,13 +11,14 @@ import {
 } from "@elizaos/core";
 import { CreateCollectionSchema } from "../types/index.ts";
 import { createCollectionTemplate } from "../templates/index.ts";
-import { LCDClient } from "@initia/initia.js";
+import pkg from "@initia/initia.js";
 import { z } from "zod";
-
 import { createCollection } from "../utils/generateMoveContractCode.ts";
 
+const { LCDClient } = pkg;
+
 export class NFTCollectionAction {
-  private lcd: LCDClient;
+  private lcd: InstanceType<typeof LCDClient>;
 
   constructor(private runtime: IAgentRuntime) {
     if (!runtime.getSetting("INITIA_MNEMONIC")) {
