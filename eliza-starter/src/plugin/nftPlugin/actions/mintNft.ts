@@ -11,27 +11,28 @@ import {
 } from "@elizaos/core";
 import { mintNFTTemplate } from "../templates/index.ts";
 import { type MintNFTContent, MintNFTSchema } from "../types/index.ts";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
-import { parseAccount, SuiNetwork } from "../utils/utils.ts";
+import { LCDClient } from "@initia/initia.js";
 import { mintNFT } from "../utils/generateMoveContractCode.ts";
 
 function isMintNFTContent(content: any): content is MintNFTContent {
   return (
     typeof content.collectionId === "string" &&
-    typeof content.collectionCap === "string" &&
-    typeof content.packageId === "string"
+    typeof content.name === "string" &&
+    typeof content.description === "string"
   );
 }
 
 export class MintNFTAction {
-  private suiClient: SuiClient;
+  private lcd: LCDClient;
 
   constructor(private runtime: IAgentRuntime) {
-    if (!runtime.getSetting("SUI_PRIVATE_KEY")) {
-      throw new Error("Sui private key not found");
+    if (!runtime.getSetting("INITIA_MNEMONIC")) {
+      throw new Error("Initia mnemonic not found");
     }
-    this.suiClient = new SuiClient({
-      url: getFullnodeUrl("testnet"),
+    this.lcd = new LCDClient("https://lcd.initiation-2.initia.xyz", {
+      chainId: "initiation-2",
+      gasPrices: "0.15uinit",
+      gasAdjustment: "2.0",
     });
   }
 
@@ -41,20 +42,20 @@ export class MintNFTAction {
     }
 
     // Mint NFT using the Move contract
-    const result = await mintNFT(content.packageId as string, {
-      collectionId: content.collectionId as string,
-      collectionCap: content.collectionCap as string,
+    const result = await mintNFT({
+      mnemonic: this.runtime.getSetting("INITIA_MNEMONIC"),
+      collectionName: content.collectionId as string,
       name: `${content.name || "NFT"} #${tokenId}`,
-      description: (content.description as string) || `NFT #${tokenId}`,
-      url: (content.imageUrl as string) || "",
+      description: content.description as string,
+      imageUrl: content.imageUrl as string,
+      wallet: this.runtime.getSetting("INITIA_WALLET_ADDRESS"),
     });
 
-    if (!result.success || !result.nftId) {
+    if (!result.success) {
       throw new Error(result.error || "Failed to mint NFT");
     }
 
     return {
-      nftId: result.nftId,
       transactionId: result.transactionId,
     };
   }
@@ -72,10 +73,10 @@ const mintNFTAction: Action = {
     "MAKE_NFT",
     "TOKEN_GENERATION",
   ],
-  description: "Mint NFTs for the collection on Sui",
+  description: "Mint NFTs for the collection on Initia",
   validate: async (runtime: IAgentRuntime, _message: Memory) => {
-    // Ensure we have the required Sui private key
-    return !!runtime.getSetting("SUI_PRIVATE_KEY");
+    // Ensure we have the required Initia mnemonic
+    return !!runtime.getSetting("INITIA_MNEMONIC");
   },
   handler: async (
     runtime: IAgentRuntime,
@@ -86,8 +87,8 @@ const mintNFTAction: Action = {
   ) => {
     try {
       // Ensure we're on testnet
-      if (runtime.getSetting("SUI_NETWORK") !== "testnet") {
-        throw new Error("NFT minting is only supported on Sui testnet");
+      if (runtime.getSetting("INITIA_NETWORK") !== "testnet") {
+        throw new Error("NFT minting is only supported on Initia testnet");
       }
 
       elizaLogger.log("Composing state for message:", message);
@@ -120,7 +121,7 @@ const mintNFTAction: Action = {
 
       if (callback) {
         callback({
-          text: `NFT minted successfully! 🎉\nNFT ID: ${result.nftId}\nView on Explorer: https://suiexplorer.com/object/${result.nftId}?network=testnet`,
+          text: `NFT minted successfully! 🎉\nTransaction ID: ${result.transactionId}\nView on Explorer: https://scan.testnet.initia.xyz/initiation-2/tx/${result.transactionId}`,
           attachments: [],
         });
       }
@@ -134,15 +135,15 @@ const mintNFTAction: Action = {
   examples: [
     [
       {
-        user: "{{user1}}",
+        user: "{{agentName}}",
         content: {
-          text: "mint nft for collection: 0x1234... on Sui",
+          text: "mint nft for collection: 0x1234... on Initia",
         },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "I've minted a new NFT in your specified collection on Sui.",
+          text: "I've minted a new NFT in your specified collection on Initia.",
           action: "MINT_NFT",
         },
       },

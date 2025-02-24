@@ -1,34 +1,25 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { MintNFTAction } from "../actions/mintNft.ts";
-import { SuiClient } from "@mysten/sui/client";
+import { mintNFT } from "../utils/generateMoveContractCode";
 
 // Mock the IAgentRuntime
 const mockRuntime = {
   getSetting: vi.fn((key: string) => {
-    if (key === "SUI_PRIVATE_KEY") {
-      return "mock_private_key";
+    if (key === "INITIA_MNEMONIC") {
+      return "mock_mnemonic";
     }
-    if (key === "SUI_NETWORK") {
-      return "testnet";
+    if (key === "INITIA_WALLET_ADDRESS") {
+      return "mock_wallet_address";
     }
     return null;
   }),
 };
 
-// Mock Sui client
-vi.mock("@mysten/sui/client", () => ({
-  SuiClient: vi.fn().mockImplementation(() => ({
-    // Add mock methods as needed
-  })),
-  getFullnodeUrl: vi.fn().mockReturnValue("https://testnet.sui.io"),
-}));
-
 // Mock generateMoveContractCode utilities
 vi.mock("../utils/generateMoveContractCode", () => ({
   mintNFT: vi.fn().mockResolvedValue({
     success: true,
-    nftId: "0xmockedNFTId",
-    transactionId: "0xmockedTransactionId",
+    transactionId: "mock_transaction_id",
   }),
 }));
 
@@ -47,13 +38,13 @@ describe("MintNFT Action", () => {
       expect(action).toBeDefined();
     });
 
-    it("should throw if Sui private key is not found", () => {
-      const runtimeWithoutKey = {
+    it("should throw if Initia mnemonic is not found", () => {
+      const runtimeWithoutMnemonic = {
         getSetting: vi.fn().mockReturnValue(null),
       };
 
-      expect(() => new MintNFTAction(runtimeWithoutKey as any)).toThrow(
-        "Sui private key not found"
+      expect(() => new MintNFTAction(runtimeWithoutMnemonic as any)).toThrow(
+        "Initia mnemonic not found"
       );
     });
   });
@@ -67,21 +58,27 @@ describe("MintNFT Action", () => {
 
     it("should successfully mint an NFT", async () => {
       const content = {
-        packageId: "0xmockedPackageId",
-        collectionId: "0xmockedCollectionId",
-        collectionCap: "0xmockedCollectionCap",
+        collectionId: "Test Collection",
         name: "Test NFT",
         description: "Test Description",
         imageUrl: "https://example.com/image.png",
-        collectionAddress: "0xmockedCollectionAddress",
-        text: "Test NFT Description",
+        text: "Sample text",
+        collectionAddress: "0x11e5db2023e7685b9fcede2f3adf8337547761c0",
       };
 
       const result = await action.mintNFT(content, 1);
 
+      expect(mintNFT).toHaveBeenCalledWith({
+        mnemonic: mockRuntime.getSetting("INITIA_MNEMONIC"),
+        collectionName: content.collectionId,
+        name: `${content.name} #1`,
+        description: content.description,
+        imageUrl: content.imageUrl,
+        wallet: mockRuntime.getSetting("INITIA_WALLET_ADDRESS"),
+      });
+
       expect(result).toEqual({
-        nftId: "0xmockedNFTId",
-        transactionId: "0xmockedTransactionId",
+        transactionId: "mock_transaction_id",
       });
     });
 

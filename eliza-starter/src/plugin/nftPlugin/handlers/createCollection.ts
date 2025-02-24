@@ -13,13 +13,7 @@ import {
   saveBase64Image,
   saveHeuristImage,
 } from "@elizaos/plugin-image-generation";
-import {
-  generateMoveContract,
-  compileMoveContract,
-  publishMoveContract,
-  createCollection as createSuiCollection,
-} from "../utils/generateMoveContractCode.ts";
-import { parseAccount } from "../utils/utils.ts";
+
 import { collectionImageTemplate } from "../templates/index.ts";
 
 export async function createCollectionMetadata({
@@ -110,8 +104,10 @@ export const createCollection = async (
 ) => {
   try {
     // Ensure we're using testnet
-    if (runtime.getSetting("SUI_NETWORK") !== "testnet") {
-      throw new Error("Collection creation is only supported on Sui testnet");
+    if (runtime.getSetting("INITIA_NETWORK") !== "testnet") {
+      throw new Error(
+        "Collection creation is only supported on Initia testnet"
+      );
     }
 
     const collectionInfo = await createCollectionMetadata({
@@ -122,38 +118,18 @@ export const createCollection = async (
 
     if (!collectionInfo) return null;
 
-    // Generate and compile Move contract
-    const contractConfig = {
-      packageName: collectionName.toLowerCase().replace(/\s+/g, "_"),
+    const { createCollection } = await import(
+      "../utils/generateMoveContractCode"
+    );
+
+    const createCollectionResult = await createCollection({
       name: collectionInfo.name,
-      symbol: collectionInfo.symbol,
       description: collectionInfo.description,
+      uri: collectionInfo.uri,
       maxSupply: collectionInfo.maxSupply,
-      network: "testnet",
-    };
-
-    // Generate contract
-    const { packagePath } = await generateMoveContract(contractConfig);
-
-    // Compile contract
-    const compileResult = await compileMoveContract(packagePath);
-    if (!compileResult.compiled) {
-      throw new Error(`Failed to compile contract: ${compileResult.error}`);
-    }
-
-    // Publish contract
-    const publishResult = await publishMoveContract(packagePath);
-    if (!publishResult.success || !publishResult.packageId) {
-      throw new Error(`Failed to publish contract: ${publishResult.error}`);
-    }
-
-    // Create collection using the published contract
-    const createCollectionResult = await createSuiCollection({
-      packageId: publishResult.packageId,
-      name: collectionInfo.name,
-      symbol: collectionInfo.symbol,
-      description: collectionInfo.description || "",
-      maxSupply: collectionInfo.maxSupply,
+      royalty: collectionInfo.fee || 0,
+      mnemonic: runtime.getSetting("INITIA_MNEMONIC"),
+      wallet: runtime.getSetting("INITIA_WALLET"),
     });
 
     if (!createCollectionResult.success) {
@@ -163,11 +139,10 @@ export const createCollection = async (
     }
 
     return {
-      network: "sui:testnet",
-      packageId: publishResult.packageId,
+      network: "initia:initiation-2",
       collectionId: createCollectionResult.collectionId,
-      collectionCap: createCollectionResult.collectionCap,
-      link: `https://suiexplorer.com/object/${createCollectionResult.collectionId}?network=testnet`,
+      transactionId: createCollectionResult.transactionId,
+      link: `https://scan.testnet.initia.xyz/initiation-2/tx/${createCollectionResult.transactionId}`,
       collectionInfo,
     };
   } catch (error) {

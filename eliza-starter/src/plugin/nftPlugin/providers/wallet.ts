@@ -1,228 +1,104 @@
-import {
-  elizaLogger,
-  IAgentRuntime,
-  ICacheManager,
-  Memory,
-  Provider,
-  State,
-} from "@elizaos/core";
+import type { IAgentRuntime, Provider, Memory, State } from "@elizaos/core";
 
-import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
+import type { Wallet, RESTClient, Tx } from "@initia/initia.js";
 
-import { MIST_PER_SUI } from "@mysten/sui/utils";
-import BigNumber from "bignumber.js";
-import NodeCache from "node-cache";
-import * as path from "path";
-import { parseAccount, SuiNetwork } from "../utils/utils.ts";
-import axios from "axios";
-// Provider configuration
-const PROVIDER_CONFIG = {
-  MAX_RETRIES: 3,
-  RETRY_DELAY: 2000,
+interface WalletProviderOptions {
+  chainId: string;
+  nodeUrl: string;
+}
+
+const DEFAULT_INITIA_TESTNET_CONFIGS: WalletProviderOptions = {
+  chainId: "initiation-2",
+  nodeUrl: "https://rest.testnet.initia.xyz",
 };
 
-interface WalletPortfolio {
-  totalUsd: string;
-  totalSui: string;
-}
-
-interface Prices {
-  sui: { usd: string };
-}
-
-const cacheTimeSeconds = 30;
-
 export class WalletProvider {
-  private cache: NodeCache;
-  private cacheKey: string = "sui/wallet";
+  private wallet: Wallet | null = null;
+  private restClient: RESTClient | null = null;
+  private runtime: IAgentRuntime;
+
+  async initialize(
+    runtime: IAgentRuntime,
+    options: WalletProviderOptions = DEFAULT_INITIA_TESTNET_CONFIGS
+  ) {
+    const privateKey = runtime.getSetting("INITIA_PRIVATE_KEY");
+    if (!privateKey) throw new Error("INITIA_PRIVATE_KEY is not configured");
+
+    const initia = await import("@initia/initia.js");
+    const { Wallet, RESTClient, RawKey } = initia;
+
+    this.runtime = runtime;
+    this.restClient = new RESTClient(options.nodeUrl, {
+      chainId: options.chainId,
+      gasPrices: "0.15uinit",
+      gasAdjustment: "1.75",
+    });
+    this.wallet = new Wallet(this.restClient, RawKey.fromHex(privateKey));
+  }
 
   constructor(
-    private suiClient: SuiClient,
-    private address: string,
-    private cacheManager: ICacheManager
+    runtime: IAgentRuntime,
+    options: WalletProviderOptions = DEFAULT_INITIA_TESTNET_CONFIGS
   ) {
-    this.cache = new NodeCache({ stdTTL: cacheTimeSeconds }); // Cache TTL set to 5 minutes
+    this.runtime = runtime;
+    this.initialize(runtime, options);
   }
 
-  private async readFromCache<T>(key: string): Promise<T | null> {
-    const cached = await this.cacheManager.get<T>(
-      path.join(this.cacheKey, key)
-    );
-    return cached;
-  }
-
-  private async writeToCache<T>(key: string, data: T): Promise<void> {
-    await this.cacheManager.set(path.join(this.cacheKey, key), data, {
-      expires: Date.now() + cacheTimeSeconds * 1000,
-    });
-  }
-
-  private async getCachedData<T>(key: string): Promise<T | null> {
-    // Check in-memory cache first
-    const cachedData = this.cache.get<T>(key);
-    if (cachedData) {
-      return cachedData;
+  getWallet() {
+    if (this.wallet == null) {
+      throw new Error("Initia wallet is not configured.");
     }
+    return this.wallet;
+  }
 
-    // Check file-based cache
-    const fileCachedData = await this.readFromCache<T>(key);
-    if (fileCachedData) {
-      // Populate in-memory cache
-      this.cache.set(key, fileCachedData);
-      return fileCachedData;
+  getAddress() {
+    if (this.wallet == null) {
+      throw new Error("Initia wallet is not configured.");
     }
-
-    return null;
+    return this.wallet.key.accAddress;
   }
 
-  private async setCachedData<T>(cacheKey: string, data: T): Promise<void> {
-    // Set in-memory cache
-    this.cache.set(cacheKey, data);
-
-    // Write to file-based cache
-    await this.writeToCache(cacheKey, data);
-  }
-
-  private async fetchPricesWithRetry() {
-    let lastError: Error;
-
-    for (let i = 0; i < PROVIDER_CONFIG.MAX_RETRIES; i++) {
-      try {
-        const cetusSuiUsdcPoolAddr =
-          "0x51e883ba7c0b566a26cbc8a94cd33eb0abd418a77cc1e60ad22fd9b1f29cd2ab";
-        const url = `https://api.dexscreener.com/latest/dex/pairs/sui/${cetusSuiUsdcPoolAddr}`;
-        elizaLogger.info(`Fetching SUI price from ${url}`);
-        const response = await axios.get(url);
-        return response.data;
-      } catch (error) {
-        console.error(`Attempt ${i + 1} failed:`, error);
-        lastError = error;
-        if (i < PROVIDER_CONFIG.MAX_RETRIES - 1) {
-          const delay = PROVIDER_CONFIG.RETRY_DELAY * Math.pow(2, i);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
-      }
+  async getBalance() {
+    if (this.wallet == null) {
+      throw new Error("Initia wallet is not configured.");
     }
-
-    console.error("All attempts failed. Throwing the last error:", lastError);
-    throw lastError;
+    return this.wallet.rest.bank.balance(this.getAddress());
   }
 
-  async fetchPortfolioValue(): Promise<WalletPortfolio> {
-    try {
-      const cacheKey = `portfolio-${this.address}`;
-      const cachedValue = await this.getCachedData<WalletPortfolio>(cacheKey);
-
-      if (cachedValue) {
-        console.log("Cache hit for fetchPortfolioValue", cachedValue);
-        return cachedValue;
-      }
-      console.log("Cache miss for fetchPortfolioValue");
-
-      const prices = await this.fetchPrices().catch((error) => {
-        console.error("Error fetching SUI price:", error);
-        throw error;
-      });
-      const suiAmountOnChain = await this.suiClient
-        .getBalance({
-          owner: this.address,
-        })
-        .catch((error) => {
-          console.error("Error fetching SUI amount:", error);
-          throw error;
-        });
-
-      const suiAmount =
-        Number.parseInt(suiAmountOnChain.totalBalance) / Number(MIST_PER_SUI);
-      const totalUsd = new BigNumber(suiAmount).times(prices.sui.usd);
-
-      const portfolio = {
-        totalUsd: totalUsd.toString(),
-        totalSui: suiAmount.toString(),
-      };
-      this.setCachedData(cacheKey, portfolio);
-      console.log("Fetched portfolio:", portfolio);
-      return portfolio;
-    } catch (error) {
-      console.error("Error fetching portfolio:", error);
-      throw error;
-    }
-  }
-
-  async fetchPrices(): Promise<Prices> {
-    try {
-      const cacheKey = "prices";
-      const cachedValue = await this.getCachedData<Prices>(cacheKey);
-
-      if (cachedValue) {
-        console.log("Cache hit for fetchPrices");
-        return cachedValue;
-      }
-      console.log("Cache miss for fetchPrices");
-
-      const suiPriceData = await this.fetchPricesWithRetry().catch((error) => {
-        console.error("Error fetching SUI price:", error);
-        throw error;
-      });
-      const prices: Prices = {
-        sui: { usd: (1 / suiPriceData.pair.priceNative).toString() },
-      };
-      this.setCachedData(cacheKey, prices);
-      return prices;
-    } catch (error) {
-      console.error("Error fetching prices:", error);
-      throw error;
-    }
-  }
-
-  formatPortfolio(runtime, portfolio: WalletPortfolio): string {
-    let output = `${runtime.character.name}\n`;
-    output += `Wallet Address: ${this.address}\n`;
-
-    const totalUsdFormatted = new BigNumber(portfolio.totalUsd).toFixed(2);
-    const totalSuiFormatted = new BigNumber(portfolio.totalSui).toFixed(4);
-
-    output += `Total Value: $${totalUsdFormatted} (${totalSuiFormatted} SUI)\n`;
-
-    return output;
-  }
-
-  async getFormattedPortfolio(runtime): Promise<string> {
-    try {
-      const portfolio = await this.fetchPortfolioValue();
-      return this.formatPortfolio(runtime, portfolio);
-    } catch (error) {
-      console.error("Error generating portfolio report:", error);
-      return "Unable to fetch wallet information. Please try again later.";
-    }
+  async sendTransaction(signedTx: Tx | string) {
+    return await this.restClient.tx.broadcast(signedTx);
   }
 }
 
-const walletProvider: Provider = {
-  get: async (
+export const initiaWalletProvider: Provider = {
+  async get(
     runtime: IAgentRuntime,
     _message: Memory,
     _state?: State
-  ): Promise<string | null> => {
-    const suiAccount = parseAccount(runtime);
+  ): Promise<string | null> {
+    if (!runtime.getSetting("INITIA_PRIVATE_KEY")) {
+      return null;
+    }
 
     try {
-      const suiClient = new SuiClient({
-        url: getFullnodeUrl(runtime.getSetting("SUI_NETWORK") as SuiNetwork),
-      });
-      const provider = new WalletProvider(
-        suiClient,
-        suiAccount.toSuiAddress(),
-        runtime.cacheManager
-      );
-      return await provider.getFormattedPortfolio(runtime);
-    } catch (error) {
-      console.error("Error in wallet provider:", error);
+      const nodeUrl: string | null = runtime.getSetting("INITIA_NODE_URL");
+      const chainId: string | null = runtime.getSetting("INITIA_CHAIN_ID");
+      let walletProvider: WalletProvider;
+      if (nodeUrl === null || chainId === null) {
+        walletProvider = new WalletProvider(runtime);
+      } else {
+        walletProvider = new WalletProvider(runtime, {
+          nodeUrl: nodeUrl,
+          chainId: chainId,
+        } as WalletProviderOptions);
+      }
+
+      const address = walletProvider.getAddress();
+      const balance = await walletProvider.getBalance();
+      return `Initia Wallet Address: ${address}\nBalance: ${balance} INIT`;
+    } catch (e) {
+      console.error("Error during configuring initia wallet provider", e);
       return null;
     }
   },
 };
-
-// Module exports
-export { walletProvider };

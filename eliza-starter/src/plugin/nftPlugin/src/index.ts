@@ -6,7 +6,7 @@ export * from "../types/index.ts";
 import type { Plugin } from "@elizaos/core";
 import nftCollectionGeneration from "../actions/nftCollectionGeneration.ts";
 import mintNFTAction from "../actions/mintNft.ts";
-import { walletProvider } from "../providers/wallet.ts";
+import { initiaWalletProvider } from "../providers/wallet.ts";
 
 export async function sleep(ms = 3000) {
   return new Promise((resolve) => {
@@ -16,7 +16,7 @@ export async function sleep(ms = 3000) {
 export const nftPlugin: Plugin = {
   name: "nft",
   description: "NFT plugin",
-  providers: [walletProvider],
+  providers: [initiaWalletProvider],
   evaluators: [],
   services: [],
   actions: [nftCollectionGeneration, mintNFTAction],

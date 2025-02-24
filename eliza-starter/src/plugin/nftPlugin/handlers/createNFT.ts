@@ -138,8 +138,8 @@ export async function createNFT({
   tokenId: number;
 }) {
   // Ensure we're on testnet
-  if (runtime.getSetting("SUI_NETWORK") !== "testnet") {
-    throw new Error("NFT creation is only supported on Sui testnet");
+  if (runtime.getSetting("INITIA_NETWORK") !== "testnet") {
+    throw new Error("NFT creation is only supported on Initia testnet");
   }
 
   const nftMetadata = await createNFTMetadata({
@@ -149,23 +149,21 @@ export async function createNFT({
   });
 
   if (nftMetadata) {
-    const mintResult = await mintNFT(packageId, {
-      collectionId,
-      collectionCap,
+    const mintResult = await mintNFT({
+      mnemonic: runtime.getSetting("INITIA_MNEMONIC"),
+      collectionName: collectionId,
       name: nftMetadata.name,
       description: nftMetadata.description,
-      url: nftMetadata.uri,
+      imageUrl: nftMetadata.uri,
+      wallet: runtime.getSetting("INITIA_WALLET_ADDRESS"),
     });
 
     if (mintResult.success) {
       return {
-        network: "sui:testnet",
-        packageId,
-        collectionId,
-        nftId: mintResult.nftId,
-        link: `https://suiexplorer.com/object/${mintResult.nftId}?network=testnet`,
-        metadata: nftMetadata,
+        network: "initia:initiation-2",
         transactionId: mintResult.transactionId,
+        metadata: nftMetadata,
+        link: `https://scan.testnet.initia.xyz/initiation-2/tx/${mintResult.transactionId}`,
       };
     }
   }

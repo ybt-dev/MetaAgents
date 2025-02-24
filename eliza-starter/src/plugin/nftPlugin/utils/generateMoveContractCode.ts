@@ -1,28 +1,7 @@
-import {
-  LCDClient,
-  Wallet,
-  MnemonicKey,
-  MsgExecute,
-  bcs,
-} from "@initia/initia.js";
+import pkg from "@initia/initia.js";
+const { LCDClient, Wallet, MnemonicKey, MsgExecute, bcs } = pkg;
 
-interface MintNFTParams {
-  collectionName: string;
-  name: string;
-  description: string;
-  imageUrl: string;
-  wallet: string;
-  mnemonic: string;
-}
-
-interface CreateCollectionParams {
-  name: string;
-  description: string;
-  uri: string;
-  maxSupply: number;
-  royalty: number;
-  wallet: string;
-}
+import { MintNFTParams, CreateCollectionParams } from "../types";
 
 export async function mintNFT(params: MintNFTParams): Promise<{
   success: boolean;

@@ -9,72 +9,71 @@ import {
   ModelClass,
   type State,
 } from "@elizaos/core";
-import { createCollectionMetadata } from "../handlers/createCollection.ts";
 import { CreateCollectionSchema } from "../types/index.ts";
 import { createCollectionTemplate } from "../templates/index.ts";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
-import { parseAccount, SuiNetwork } from "../utils/utils.ts";
+import { LCDClient } from "@initia/initia.js";
+import { z } from "zod";
 
-import {
-  generateMoveContract,
-  compileMoveContract,
-  publishMoveContract,
-  createCollection,
-} from "../utils/generateMoveContractCode.ts";
+import { createCollection } from "../utils/generateMoveContractCode.ts";
 
 export class NFTCollectionAction {
-  private suiClient: SuiClient;
+  private lcd: LCDClient;
 
   constructor(private runtime: IAgentRuntime) {
-    // Initialize Sui client with testnet
-    this.suiClient = new SuiClient({
-      url: getFullnodeUrl("testnet"),
+    if (!runtime.getSetting("INITIA_MNEMONIC")) {
+      throw new Error("Initia mnemonic not found");
+    }
+    // Initialize Initia client with testnet
+    this.lcd = new LCDClient("https://lcd.initiation-2.initia.xyz", {
+      chainId: "initiation-2",
+      gasPrices: "0.15uinit",
+      gasAdjustment: "2.0",
     });
   }
 
   async generateCollection(name: string, description: string) {
-    // Generate contract name from collection name
-    const contractName = name.toLowerCase().replace(/[^a-zA-Z0-9]/g, "_");
-    const symbol = name.slice(0, 5).toUpperCase();
-    const maxSupply = 5000;
+    const content = await generateObject({
+      runtime: this.runtime,
+      context: JSON.stringify({ name, description }),
+      modelClass: ModelClass.LARGE,
+      schema: z.object({
+        maxSupply: z
+          .number()
+          .min(1)
+          .max(10000)
+          .describe(
+            "Maximum number of NFTs that can be minted in this collection (1-10000)"
+          ),
+        royaltyPercentage: z
+          .number()
+          .min(0)
+          .max(10)
+          .describe("Royalty percentage for secondary sales (0-10)"),
+        uri: z
+          .string()
+          .default("")
+          .describe("Optional metadata URI for the collection"),
+      }),
+    });
 
-    // Generate Move contract
-    const contractConfig = {
-      packageName: contractName,
-      name: name,
-      symbol: symbol,
-      description: description,
-      maxSupply: maxSupply,
+    const { object: params } = content as {
+      object: {
+        maxSupply: number;
+        royaltyPercentage: number;
+        uri: string;
+      };
     };
+    const royaltyBasisPoints = Math.floor(params.royaltyPercentage * 100);
 
-    // Generate and compile contract
-    const { packagePath } = await generateMoveContract(contractConfig);
-    const compileResult = await compileMoveContract(packagePath);
-
-    if (!compileResult.compiled) {
-      throw new Error(`Contract compilation failed: ${compileResult.error}`);
-    }
-
-    elizaLogger.log("Contract compiled successfully");
-
-    // Publish contract
-    const publishResult = await publishMoveContract(packagePath);
-
-    if (!publishResult.success || !publishResult.packageId) {
-      throw new Error(`Contract deployment failed: ${publishResult.error}`);
-    }
-
-    elizaLogger.log(
-      `Contract published with package ID: ${publishResult.packageId}`
-    );
-
-    // Create collection using the published contract
+    // Create collection using the contract
     const createCollectionResult = await createCollection({
-      packageId: publishResult.packageId,
+      mnemonic: this.runtime.getSetting("INITIA_MNEMONIC"),
       name: name,
-      symbol: symbol,
       description: description,
-      maxSupply: maxSupply,
+      uri: params.uri,
+      maxSupply: params.maxSupply,
+      royalty: royaltyBasisPoints,
+      wallet: this.runtime.getSetting("INITIA_WALLET_ADDRESS"),
     });
 
     if (!createCollectionResult.success) {
@@ -84,9 +83,8 @@ export class NFTCollectionAction {
     }
 
     return {
-      packageId: publishResult.packageId,
+      transactionId: createCollectionResult.transactionId,
       collectionId: createCollectionResult.collectionId,
-      collectionCap: createCollectionResult.collectionCap,
     };
   }
 }
@@ -100,10 +98,10 @@ const nftCollectionGeneration: Action = {
     "MAKE_COLLECTION",
     "GENERATE_COLLECTION",
   ],
-  description: "Generate an NFT collection on Sui",
+  description: "Generate an NFT collection on Initia",
   validate: async (runtime: IAgentRuntime, _message: Memory) => {
-    // Ensure we have the required Sui private key
-    return !!runtime.getSetting("SUI_PRIVATE_KEY");
+    // Ensure we have the required Initia mnemonic
+    return !!runtime.getSetting("INITIA_MNEMONIC");
   },
   handler: async (
     runtime: IAgentRuntime,
@@ -114,9 +112,9 @@ const nftCollectionGeneration: Action = {
   ) => {
     try {
       // Ensure we're on testnet
-      if (runtime.getSetting("SUI_NETWORK") !== "testnet") {
+      if (runtime.getSetting("INITIA_NETWORK") !== "testnet") {
         throw new Error(
-          "Collection generation is only supported on Sui testnet"
+          "Collection generation is only supported on Initia testnet"
         );
       }
 
@@ -151,10 +149,9 @@ const nftCollectionGeneration: Action = {
         callback({
           text:
             `Collection created successfully! 🎉\n` +
-            `Package ID: ${result.packageId}\n` +
+            `Transaction ID: ${result.transactionId}\n` +
             `Collection ID: ${result.collectionId}\n` +
-            `Collection Cap: ${result.collectionCap}\n` +
-            `View on Explorer: https://suiexplorer.com/object/${result.collectionId}?network=testnet`,
+            `View on Explorer: https://scan.testnet.initia.xyz/initiation-2/tx/${result.transactionId}`,
           attachments: [],
         });
       }
@@ -168,13 +165,13 @@ const nftCollectionGeneration: Action = {
   examples: [
     [
       {
-        user: "{{user1}}",
-        content: { text: "Generate a collection on Sui" },
+        user: "{{agentName}}",
+        content: { text: "Generate a collection on Initia" },
       },
       {
         user: "{{agentName}}",
         content: {
-          text: "Here's your new NFT collection on Sui.",
+          text: "Here's your new NFT collection on Initia.",
           action: "GENERATE_COLLECTION",
         },
       },

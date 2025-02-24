@@ -1,10 +1,5 @@
 import type { IAgentRuntime } from "@elizaos/core";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
-import {
-  getNFTInfo,
-  getTransactionInfo,
-} from "../utils/generateMoveContractCode";
-import { SuiNetwork } from "../utils/utils";
+import { LCDClient } from "@initia/initia.js";
 
 export async function verifyNFT({
   runtime,
@@ -17,49 +12,55 @@ export async function verifyNFT({
 }) {
   try {
     // Ensure we're on testnet
-    if (runtime.getSetting("SUI_NETWORK") !== "testnet") {
-      throw new Error("NFT verification is only supported on Sui testnet");
+    if (runtime.getSetting("INITIA_NETWORK") !== "testnet") {
+      throw new Error("NFT verification is only supported on Initia testnet");
     }
 
-    const suiClient = new SuiClient({
-      url: getFullnodeUrl(runtime.getSetting("SUI_NETWORK") as SuiNetwork),
+    const lcd = new LCDClient("https://lcd.testnet.initia.xyz", {
+      chainId: "initiation-2",
+      gasPrices: "0.15uinit",
+      gasAdjustment: "2.0",
     });
 
-    // Get NFT object information
-    const nftInfo = await getNFTInfo(nftId);
+    // Get NFT object information using Move view function
+    try {
+      const nftInfo = await lcd.move.viewJSON(
+        "0x11e5db2023e7685b9fcede2f3adf8337547761c0", // module owner address (from generateMoveContractCode.ts)
+        "metaAgents_nft_module", // module name
+        "get_nft_info", // function name
+        [], // type arguments
+        [nftId] // function arguments
+      );
 
-    // Verify the NFT exists and belongs to the correct collection
-    if (!nftInfo || !nftInfo.data) {
+      if (!nftInfo) {
+        return {
+          success: false,
+          error: "NFT not found",
+          verified: false,
+        };
+      }
+
+      // Use the response directly as it's already parsed
+      const nftData = nftInfo;
+
+      return {
+        success: true,
+        owner: (nftData as any).owner,
+        collectionId: collectionId,
+        nftData: {
+          name: (nftData as any).name,
+          description: (nftData as any).description,
+          url: (nftData as any).url,
+        },
+        verified: true,
+      };
+    } catch (moveError) {
       return {
         success: false,
-        error: "NFT not found",
+        error: "Failed to fetch NFT data from contract",
         verified: false,
       };
     }
-
-    // Check if the NFT belongs to the specified collection
-    const nftData = nftInfo.data;
-    const nftCollectionId = nftData.collection;
-
-    if (nftCollectionId !== collectionId) {
-      return {
-        success: false,
-        error: "NFT does not belong to the specified collection",
-        verified: false,
-      };
-    }
-
-    return {
-      success: true,
-      owner: nftData.owner,
-      collectionId: nftCollectionId,
-      nftData: {
-        name: nftData.name,
-        description: nftData.description,
-        url: nftData.url,
-      },
-      verified: true,
-    };
   } catch (error) {
     console.error("Error verifying NFT:", error);
     return {
