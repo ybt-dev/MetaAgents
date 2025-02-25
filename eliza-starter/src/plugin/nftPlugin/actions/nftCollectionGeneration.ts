@@ -11,11 +11,11 @@ import {
 } from "@elizaos/core";
 import { CreateCollectionSchema } from "../types/index.ts";
 import { createCollectionTemplate } from "../templates/index.ts";
-import pkg from "@initia/initia.js";
+import * as initia from "@initia/initia.js";
 import { z } from "zod";
 import { createCollection } from "../utils/generateMoveContractCode.ts";
 
-const { LCDClient } = pkg;
+const { LCDClient } = initia;
 
 export class NFTCollectionAction {
   private lcd: InstanceType<typeof LCDClient>;

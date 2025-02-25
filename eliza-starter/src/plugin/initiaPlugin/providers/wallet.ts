@@ -1,21 +1,25 @@
 import type { IAgentRuntime, Provider, Memory, State } from "@elizaos/core";
 
+import * as initia from "@initia/initia.js";
+
 // Add type imports for Initia.js
-import type { Wallet, RESTClient, Tx } from "@initia/initia.js";
+import type { Wallet, LCDClient, Tx } from "@initia/initia.js";
 
 interface WalletProviderOptions {
   chainId: string;
   nodeUrl: string;
+  privateKey?: string;
+  mnemonic?: string;
 }
 
 const DEFAULT_INITIA_TESTNET_CONFIGS: WalletProviderOptions = {
   chainId: "initiation-2",
-  nodeUrl: "https://rest.testnet.initia.xyz",
+  nodeUrl: "https://lcd.initiation-2.initia.xyz/",
 };
 
 export class WalletProvider {
   private wallet: Wallet | null = null;
-  private restClient: RESTClient | null = null;
+  private restClient: LCDClient | null = null;
   private runtime: IAgentRuntime;
 
   async initialize(
@@ -23,18 +27,28 @@ export class WalletProvider {
     options: WalletProviderOptions = DEFAULT_INITIA_TESTNET_CONFIGS
   ) {
     const privateKey = runtime.getSetting("INITIA_PRIVATE_KEY");
-    if (!privateKey) throw new Error("INITIA_PRIVATE_KEY is not configured");
+    const mnemonic = runtime.getSetting("INITIA_MNEMONIC");
 
-    const initia = await import("@initia/initia.js");
-    const { Wallet, RESTClient, RawKey } = initia;
+    if (!privateKey && !mnemonic) {
+      throw new Error(
+        "Either INITIA_PRIVATE_KEY or INITIA_MNEMONIC must be configured"
+      );
+    }
+
+    const { Wallet, LCDClient, RawKey, MnemonicKey } = initia;
 
     this.runtime = runtime;
-    this.restClient = new RESTClient(options.nodeUrl, {
+    this.restClient = new LCDClient(options.nodeUrl, {
       chainId: options.chainId,
       gasPrices: "0.15uinit",
       gasAdjustment: "1.75",
     });
-    this.wallet = new Wallet(this.restClient, RawKey.fromHex(privateKey));
+
+    if (privateKey) {
+      this.wallet = new Wallet(this.restClient, RawKey.fromHex(privateKey));
+    } else if (mnemonic) {
+      this.wallet = new Wallet(this.restClient, new MnemonicKey({ mnemonic }));
+    }
   }
 
   constructor(

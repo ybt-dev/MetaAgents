@@ -11,10 +11,10 @@ import {
 } from "@elizaos/core";
 import { mintNFTTemplate } from "../templates/index.ts";
 import { type MintNFTContent, MintNFTSchema } from "../types/index.ts";
-import pkg from "@initia/initia.js";
+import * as initia from "@initia/initia.js";
 import { mintNFT } from "../utils/generateMoveContractCode.ts";
 
-const { LCDClient } = pkg;
+const { LCDClient } = initia;
 
 function isMintNFTContent(content: any): content is MintNFTContent {
   return (
@@ -31,11 +31,6 @@ export class MintNFTAction {
     if (!runtime.getSetting("INITIA_MNEMONIC")) {
       throw new Error("Initia mnemonic not found");
     }
-    this.lcd = new LCDClient("https://lcd.initiation-2.initia.xyz", {
-      chainId: "initiation-2",
-      gasPrices: "0.15uinit",
-      gasAdjustment: "2.0",
-    });
   }
 
   async mintNFT(content: MintNFTContent, tokenId: number) {

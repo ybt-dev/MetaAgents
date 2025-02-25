@@ -12,6 +12,7 @@ import {
   State,
 } from "@elizaos/core";
 import { WalletProvider } from "../providers/wallet.ts";
+import * as initia from "@initia/initia.js";
 
 export interface TransferContent extends Content {
   sender: string;
@@ -101,20 +102,39 @@ export default {
     }
 
     try {
-      const initia = await import("@initia/initia.js");
-      const { MsgSend } = initia;
+      const { MsgSend, LCDClient } = initia;
 
+      // Initialize LCD client with proper configuration
+      const lcdUrl =
+        runtime.getSetting("INITIA_LCD_URL") ||
+        "https://lcd.initiation-2.initia.xyz";
+      const chainId = runtime.getSetting("INITIA_CHAIN_ID") || "initiation-2";
+      const gasPrices = runtime.getSetting("INITIA_GAS_PRICES") || "0.15uinit";
+
+      const lcd = new LCDClient(lcdUrl, {
+        chainId: chainId,
+        gasPrices: gasPrices,
+        gasAdjustment: "1.75",
+      });
+
+      // Use WalletProvider instead of direct wallet initialization
       const walletProvider = new WalletProvider(runtime);
+      const wallet = await walletProvider.getWallet();
+
+      // Create and sign transaction
       const msgSend = new MsgSend(
         content.sender,
         content.recipient,
         content.amount
       );
-      const signedTx = await walletProvider.getWallet().createAndSignTx({
+      const signedTx = await wallet.createAndSignTx({
         msgs: [msgSend],
-        memo: "This transaction is made in ElizaOS",
+        memo: "Transaction via ElizaOS",
       });
-      const txResult = await walletProvider.sendTransaction(signedTx);
+
+      // Broadcast transaction
+      const txResult = await lcd.tx.broadcast(signedTx);
+
       if (callback) {
         callback({
           text: `Successfully transferred INITIA.
@@ -122,6 +142,7 @@ Transaction Hash: ${txResult.txhash}
 Sender: ${content.sender}
 Recipient: ${content.recipient}
 Amount: ${content.amount}`,
+          content: txResult,
         });
       }
       return true;
@@ -130,6 +151,7 @@ Amount: ${content.amount}`,
       if (callback) {
         callback({
           text: `Failed to transfer INITIA: ${e.message}`,
+          content: { error: e.message },
         });
       }
       return false;

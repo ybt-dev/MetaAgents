@@ -1,3 +1,5 @@
+import * as initia from "@initia/initia.js";
+
 import type { IAgentRuntime, Provider, Memory, State } from "@elizaos/core";
 
 import type { Wallet, RESTClient, Tx } from "@initia/initia.js";
@@ -24,7 +26,6 @@ export class WalletProvider {
     const privateKey = runtime.getSetting("INITIA_PRIVATE_KEY");
     if (!privateKey) throw new Error("INITIA_PRIVATE_KEY is not configured");
 
-    const initia = await import("@initia/initia.js");
     const { Wallet, RESTClient, RawKey } = initia;
 
     this.runtime = runtime;
