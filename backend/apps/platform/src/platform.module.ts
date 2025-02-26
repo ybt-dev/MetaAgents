@@ -13,6 +13,7 @@ import { TransactionsModule } from '@libs/transactions';
 import { MongodbTransactionsManager, MongodbTransactionsModule } from '@libs/mongodb-transactions';
 import { AgentsModule } from '@apps/platform/agents';
 import { SessionsModule } from '@apps/platform/sessions';
+import { InitiaModule } from './initia';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SessionsModule } from '@apps/platform/sessions';
       useExistingTransactionsManager: MongodbTransactionsManager,
     }),
     AgentsModule,
+    InitiaModule,
     SessionsModule,
   ],
 })

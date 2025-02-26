@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { InitiaController } from './controllers';
+import { DefaultInitiaService } from './services/initia.service';
+import InitiaModuleTokens from './initia.module.tokens';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [],
   controllers: [InitiaController],
-  providers: [],
-  exports: [],
+  providers: [
+    {
+      provide: InitiaModuleTokens.Services.InitiaService,
+      useClass: DefaultInitiaService,
+    },
+  ],
+  exports: [InitiaModuleTokens.Services.InitiaService],
 })
-export class SessionsModule {}
+export class InitiaModule {
+  public static Tokens = InitiaModuleTokens;
+}
