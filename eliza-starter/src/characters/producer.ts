@@ -6,7 +6,7 @@ import {
 } from "@elizaos/core";
 import { imageGenerationPlugin } from "../plugin/imagePlugin/index.ts";
 import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
-import { initiaPlugin } from "../plugin/initiaPlugin/src/index.ts";
+import { initiaPlugin } from "@elizaos/plugin-initia";
 
 export const PRODUCER_AGENT_ID = "1de943dc-7fbf-4e84-8ae5-ce6b254d395c";
 

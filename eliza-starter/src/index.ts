@@ -1,6 +1,6 @@
 import {MongoClient, ObjectId} from "mongodb";
 import {MongoDBDatabaseAdapter} from "@elizaos/adapter-mongodb";
-import {DirectClient, DirectClientInterface} from "@elizaos/client-direct";
+import {DirectClientInterface} from "@elizaos/client-direct";
 import {AutoClientInterface} from "@elizaos/client-auto";
 import express from 'express';
 import {
@@ -27,7 +27,7 @@ import {TelegramClientInterface} from "@elizaos/client-telegram";
 import {communicateWithAgents} from "./actions/communicate-agent/index.ts";
 import {AgentConfiguration, generateCharacter} from "./utils/character-generator.ts";
 import {sendInteractionToProducer, subscribeToAgentConversation} from "./utils/dialogue-system.ts";
-import TwitterClientInterface from "./clients/client-twitter/index.ts";
+import TwitterClientInterface from "@elizaos/client-twitter";
 
 const expressApp = express();
 
