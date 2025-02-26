@@ -22,12 +22,17 @@ export class WalletProvider {
   private restClient: LCDClient | null = null;
   private runtime: IAgentRuntime;
 
-  async initialize(
-    runtime: IAgentRuntime,
-    options: WalletProviderOptions = DEFAULT_INITIA_TESTNET_CONFIGS
-  ) {
-    const privateKey = runtime.getSetting("INITIA_PRIVATE_KEY");
-    const mnemonic = runtime.getSetting("INITIA_MNEMONIC");
+  constructor(runtime: IAgentRuntime) {
+    this.runtime = runtime;
+  }
+
+  public async initialize(runtime?: IAgentRuntime): Promise<void> {
+    if (runtime) {
+      this.runtime = runtime;
+    }
+
+    const privateKey = this.runtime.getSetting("INITIA_PRIVATE_KEY");
+    const mnemonic = this.runtime.getSetting("INITIA_MNEMONIC");
 
     if (!privateKey && !mnemonic) {
       throw new Error(
@@ -37,9 +42,8 @@ export class WalletProvider {
 
     const { Wallet, LCDClient, RawKey, MnemonicKey } = initia;
 
-    this.runtime = runtime;
-    this.restClient = new LCDClient(options.nodeUrl, {
-      chainId: options.chainId,
+    this.restClient = new LCDClient(DEFAULT_INITIA_TESTNET_CONFIGS.nodeUrl, {
+      chainId: DEFAULT_INITIA_TESTNET_CONFIGS.chainId,
       gasPrices: "0.15uinit",
       gasAdjustment: "1.75",
     });
@@ -49,14 +53,6 @@ export class WalletProvider {
     } else if (mnemonic) {
       this.wallet = new Wallet(this.restClient, new MnemonicKey({ mnemonic }));
     }
-  }
-
-  constructor(
-    runtime: IAgentRuntime,
-    options: WalletProviderOptions = DEFAULT_INITIA_TESTNET_CONFIGS
-  ) {
-    this.runtime = runtime;
-    this.initialize(runtime, options);
   }
 
   getWallet() {
@@ -102,11 +98,10 @@ export const initiaWalletProvider: Provider = {
       if (nodeUrl === null || chainId === null) {
         walletProvider = new WalletProvider(runtime);
       } else {
-        walletProvider = new WalletProvider(runtime, {
-          nodeUrl: nodeUrl,
-          chainId: chainId,
-        } as WalletProviderOptions);
+        walletProvider = new WalletProvider(runtime);
       }
+
+      await walletProvider.initialize();
 
       const address = walletProvider.getAddress();
       const balance = await walletProvider.getBalance();

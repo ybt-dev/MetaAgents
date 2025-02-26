@@ -63,7 +63,12 @@ export default {
   description: "",
   validate: async (runtime: IAgentRuntime, _message: Memory) => {
     const privateKey = runtime.getSetting("INITIA_PRIVATE_KEY");
-    return typeof privateKey === "string" && privateKey.startsWith("0x");
+    const mnemonic = runtime.getSetting("INITIA_MNEMONIC");
+    // Check for either private key or mnemonic
+    return (
+      (typeof privateKey === "string" && privateKey.length === 64) ||
+      (typeof mnemonic === "string" && mnemonic.length > 0)
+    );
   },
   handler: async (
     runtime: IAgentRuntime,
@@ -117,8 +122,9 @@ export default {
         gasAdjustment: "1.75",
       });
 
-      // Use WalletProvider instead of direct wallet initialization
+      // Initialize and get wallet
       const walletProvider = new WalletProvider(runtime);
+      await walletProvider.initialize();
       const wallet = await walletProvider.getWallet();
 
       // Create and sign transaction

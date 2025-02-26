@@ -8,9 +8,10 @@ describe("WalletProvider", () => {
       switch (key) {
         case "INITIA_PRIVATE_KEY":
           // Valid private key (64 hex chars without 0x prefix)
-          return "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+          return "032c755aba46338a8c86f583e1bb2a96a6dc6ae926246f15fffeabc01290da1c";
+        // return "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
         case "INITIA_NODE_URL":
-          return "https://lcd.testnet.initia.xyz";
+          return "https://lcd.initiation-2.initia.xyz";
         case "INITIA_CHAIN_ID":
           return "initiation-2";
         default:
@@ -21,13 +22,13 @@ describe("WalletProvider", () => {
 
   it("should initialize with private key", async () => {
     const provider = new WalletProvider(mockRuntime);
-    await provider.initialize(mockRuntime);
+    await provider.initialize();
     expect(provider).toBeDefined();
   });
 
   it("should get wallet address", async () => {
     const provider = new WalletProvider(mockRuntime);
-    await provider.initialize(mockRuntime);
+    await provider.initialize();
     expect(() => provider.getAddress()).not.toThrow();
   });
 
@@ -37,10 +38,8 @@ describe("WalletProvider", () => {
       getSetting: vi.fn(() => null),
     } as unknown as IAgentRuntime;
 
-    await expect(async () => {
-      const provider = new WalletProvider(invalidRuntime);
-      await provider.initialize(invalidRuntime);
-    }).rejects.toThrow(
+    const provider = new WalletProvider(invalidRuntime);
+    await expect(provider.initialize()).rejects.toThrow(
       "Either INITIA_PRIVATE_KEY or INITIA_MNEMONIC must be configured"
     );
   });
