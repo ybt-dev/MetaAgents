@@ -19,7 +19,7 @@ export interface TransferContent extends Content {
   amount: string;
 }
 
-const BACKEND_URL = 'http://localhost:3000/initia';
+const BACKEND_URL = process.env.BACKEND_URL;
 
 function isTransferContent(
   _runtime: IAgentRuntime,

@@ -1,10 +1,9 @@
 import type { IAgentRuntime, Provider, Memory, State } from "@elizaos/core";
 
-const BACKEND_URL = 'http://localhost:3000/initia';
+const BACKEND_URL = process.env.BACKEND_URL;
 
 export class WalletProvider {
   private wallet: any | null = null;
-  private restClient: any | null = null;
   private runtime: IAgentRuntime;
 
   constructor(runtime: IAgentRuntime) {
