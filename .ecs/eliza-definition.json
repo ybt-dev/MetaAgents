@@ -1,0 +1,36 @@
+{
+    "executionRoleArn": "${ARN_EXECUTION_ROLE}",
+    "containerDefinitions": [
+      {
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "${CLOUD_WATCH_LOGS_NAME}",
+            "awslogs-region": "${AWS_REGION}",
+            "awslogs-stream-prefix": "ecs"
+          }
+        },
+        "environment": [
+          {
+            "name": "APPLICATION_PORT",
+            "value": "80"
+          }
+        ],
+        "image": "nginx",
+        "essential": true,
+        "name": "${CONTAINER_NAME}",
+        "portMappings": [
+          {
+            "containerPort": 80,
+            "hostPort": 80,
+            "protocol": "tcp"
+          }
+        ]
+      }
+    ],
+    "memory": "4096",
+    "family": "${FAMILY}",
+    "requiresCompatibilities": ["EC2", "FARGATE"],
+    "networkMode": "awsvpc",
+    "cpu": "2048"
+  }

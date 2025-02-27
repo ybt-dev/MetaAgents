@@ -3,15 +3,15 @@ name: Deploy-test
 on:
   push:
     branches:
-      - prod
+      - test
 
 jobs:
   deploy-frontend:
-    uses: dev-hub-ai/MetaAgents/.github/workflows/reusable_deploy_to_ecs.yaml@reusable-workflows/v1
+    uses: ybt-dev/MetaAgents/.github/workflows/reusable_deploy_to_ecs.yaml@reusable-workflows/v1
     with:
       ENVIRONMENT: test
-      SERVICE_TYPE: sui-fe
-      APP_NAME: ai-office
+      SERVICE_TYPE: meta-agents-fe
+      APP_NAME: meta-agents
       LAUNCH_TYPE: FARGATE
       DOCKERFILE_PATH: ./frontend/Dockerfile
       DOCKER_CONTEXT: ./frontend
@@ -24,4 +24,39 @@ jobs:
       ECS_CLUSTER_NAME: ${{ secrets.TEST_ECS_CLUSTER_NAME }}
       DOCKER_BUILD_ENVS: |
         ENV VITE_API_URL=${{ secrets.TEST_VITE_API_URL }}
-        ENV VITE_APP_NAME='AI Office'
+        ENV VITE_APP_NAME='Meta-Agents'
+
+  deploy-backend:
+    uses: ybt-dev/MetaAgents/.github/workflows/reusable_deploy_to_ecs.yaml@reusable-workflows/v1
+    with:
+      ENVIRONMENT: test
+      SERVICE_TYPE: meta-agents-be
+      APP_NAME: meta-agents
+      LAUNCH_TYPE: FARGATE
+      DOCKERFILE_PATH: ./backend/Dockerfile
+      DOCKER_CONTEXT: ./backend
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.TEST_AWS_REGION }}
+      ARN_EXECUTION_ROLE: ${{ secrets.TEST_ARN_EXECUTION_ROLE }}
+      SECRET_ARN: ${{ secrets.TEST_SECRET_ARN }}
+      ECS_CLUSTER_NAME: ${{ secrets.TEST_ECS_CLUSTER_NAME }}
+
+  deploy-eliza:
+    uses: ybt-dev/MetaAgents/.github/workflows/reusable_deploy_to_ecs.yaml@reusable-workflows/v1
+    with:
+      ENVIRONMENT: test
+      SERVICE_TYPE: meta-agents-eliza
+      APP_NAME: meta-agents
+      LAUNCH_TYPE: FARGATE
+      DOCKERFILE_PATH: ./eliza-starter/Dockerfile
+      DOCKER_CONTEXT: ./eliza-starter
+      TASK_DEFINITION_PATH: ./.ecs/.ecs/eliza-definition.json
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.TEST_AWS_REGION }}
+      ARN_EXECUTION_ROLE: ${{ secrets.TEST_ARN_EXECUTION_ROLE }}
+      SECRET_ARN: ${{ secrets.TEST_SECRET_ARN }}
+      ECS_CLUSTER_NAME: ${{ secrets.TEST_ECS_CLUSTER_NAME }}
