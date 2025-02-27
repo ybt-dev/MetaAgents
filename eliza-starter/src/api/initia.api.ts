@@ -47,14 +47,14 @@ export class RestInitiaApi implements InitiaApi {
   constructor(private restApiClient: RestApiClient) {}
 
   public sendAmount(params: SendAmountParams) {
-    return this.restApiClient.makeCall<TransactionResult>('/send-amount', 'POST', params);
+    return this.restApiClient.makeCall<TransactionResult>('/initia/send-amount', 'POST', params);
   }
 
   public async getWalletBalance(walletAddress: string) {
-    return this.restApiClient.makeCall<WalletBalance>(`/balance?walletAddress=${walletAddress}`, 'GET');
+    return this.restApiClient.makeCall<WalletBalance>(`/initia/balance?walletAddress=${walletAddress}`, 'GET');
   }
 
   public createNftCollection(params: CreateNftCollectionParams) {
-    return this.restApiClient.makeCall<TransactionResult>('/create-collection', 'POST', params);
+    return this.restApiClient.makeCall<TransactionResult>('/initia/create-collection', 'POST', params);
   }
 }
