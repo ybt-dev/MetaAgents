@@ -13,7 +13,6 @@ import { CreateCollectionSchema } from "../types/index.ts";
 import { createCollectionTemplate } from "../templates/index.ts";
 import { z } from "zod";
 import { createCollection } from "../utils/generateMoveContractCode.ts";
-import { createCollectionMetadata } from "../handlers/createCollection.ts";
 
 export class NFTCollectionAction {
   constructor(private runtime: IAgentRuntime) {
@@ -40,6 +39,10 @@ export class NFTCollectionAction {
           .min(0)
           .max(10)
           .describe("Royalty percentage for secondary sales (0-10)"),
+        uri: z
+          .string()
+          .default("")
+          .describe("Optional metadata URI for the collection"),
       }),
     });
 
@@ -47,27 +50,17 @@ export class NFTCollectionAction {
       object: {
         maxSupply: number;
         royaltyPercentage: number;
+        uri: string;
       };
     };
     const royaltyBasisPoints = Math.floor(params.royaltyPercentage * 100);
-
-    // Generate and store collection metadata in AWS S3
-    const collectionMetadata = await createCollectionMetadata({
-      runtime: this.runtime,
-      collectionName: name,
-      fee: royaltyBasisPoints,
-    });
-
-    if (!collectionMetadata) {
-      throw new Error("Failed to generate collection metadata");
-    }
 
     // Create collection using the contract
     const createCollectionResult = await createCollection({
       mnemonic: this.runtime.getSetting("INITIA_MNEMONIC"),
       name: name,
       description: description,
-      uri: collectionMetadata.uri,
+      uri: params.uri,
       maxSupply: params.maxSupply,
       royalty: royaltyBasisPoints,
       wallet: this.runtime.getSetting("INITIA_WALLET_ADDRESS"),
