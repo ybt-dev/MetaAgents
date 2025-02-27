@@ -10,7 +10,7 @@ jobs:
     uses: ybt-dev/MetaAgents/.github/workflows/reusable_deploy_to_ecs.yaml@reusable-workflows/v1
     with:
       ENVIRONMENT: test
-      SERVICE_TYPE: meta-agents-fe
+      SERVICE_TYPE: fe
       APP_NAME: meta-agents
       LAUNCH_TYPE: FARGATE
       DOCKERFILE_PATH: ./frontend/Dockerfile
@@ -30,7 +30,7 @@ jobs:
     uses: ybt-dev/MetaAgents/.github/workflows/reusable_deploy_to_ecs.yaml@reusable-workflows/v1
     with:
       ENVIRONMENT: test
-      SERVICE_TYPE: meta-agents-be
+      SERVICE_TYPE: be
       APP_NAME: meta-agents
       LAUNCH_TYPE: FARGATE
       DOCKERFILE_PATH: ./backend/Dockerfile
@@ -47,7 +47,7 @@ jobs:
     uses: ybt-dev/MetaAgents/.github/workflows/reusable_deploy_to_ecs.yaml@reusable-workflows/v1
     with:
       ENVIRONMENT: test
-      SERVICE_TYPE: meta-agents-eliza
+      SERVICE_TYPE: eliza
       APP_NAME: meta-agents
       LAUNCH_TYPE: FARGATE
       DOCKERFILE_PATH: ./eliza-starter/Dockerfile
