@@ -1,7 +1,6 @@
-import pkg from "@initia/initia.js";
-const { LCDClient, Wallet, MnemonicKey, MsgExecute, bcs } = pkg;
-
 import { MintNFTParams, CreateCollectionParams } from "../types";
+
+const BACKEND_URL = process.env.BACKEND_URL;
 
 export async function mintNFT(params: MintNFTParams): Promise<{
   success: boolean;
@@ -9,38 +8,18 @@ export async function mintNFT(params: MintNFTParams): Promise<{
   error?: string;
 }> {
   try {
-    const lcd = new LCDClient("https://lcd.initiation-2.initia.xyz", {
-      chainId: "initiation-2",
-      gasPrices: "0.15uinit",
-      gasAdjustment: "2.0",
-    });
-
-    const key = new MnemonicKey({
-      mnemonic: params.mnemonic,
-    });
-
-    const wallet = new Wallet(lcd, key);
-
-    const msg = new MsgExecute(
-      key.accAddress,
-      "0x11e5db2023e7685b9fcede2f3adf8337547761c0",
-      "metaAgents_nft_module",
-      "mint_nft",
-      undefined,
-      [
-        bcs.string().serialize(params.collectionName).toBase64(),
-        bcs.string().serialize(params.name).toBase64(),
-        bcs.string().serialize(params.description).toBase64(),
-        bcs.string().serialize(params.imageUrl).toBase64(),
-        bcs.address().serialize(params.wallet).toBase64(),
-      ]
-    );
-
-    const signedTx = await wallet.createAndSignTx({
-      msgs: [msg],
-    });
-
-    const result = await lcd.tx.broadcast(signedTx);
+    const result = await fetch(`${BACKEND_URL}/mintNft`, {
+      method: 'POST',
+      body: JSON.stringify({
+        mnemonic: params.mnemonic,
+        destinationAddress: '0x11e5db2023e7685b9fcede2f3adf8337547761c0',
+        collectionName: params.collectionName,
+        description: params.description,
+        name: params.name,
+        imageUrl: params.imageUrl,
+        walletAddress: params.wallet
+      })
+    }).then(data => data.json()) as any;
 
     if (!result.txhash) {
       return {
@@ -71,38 +50,18 @@ export async function createCollection(
   collectionId?: string;
 }> {
   try {
-    const lcd = new LCDClient("https://lcd.initiation-2.initia.xyz", {
-      chainId: "initiation-2",
-      gasPrices: "0.15uinit",
-      gasAdjustment: "2.0",
-    });
-
-    const key = new MnemonicKey({
-      mnemonic: params.mnemonic,
-    });
-
-    const wallet = new Wallet(lcd, key);
-
-    const msg = new MsgExecute(
-      key.accAddress,
-      "0x11e5db2023e7685b9fcede2f3adf8337547761c0",
-      "metaAgents_nft_module",
-      "create_collection",
-      undefined,
-      [
-        bcs.string().serialize(params.name).toBase64(),
-        bcs.string().serialize(params.description).toBase64(),
-        bcs.string().serialize(params.uri).toBase64(),
-        bcs.u64().serialize(params.maxSupply).toBase64(),
-        bcs.u64().serialize(params.royalty).toBase64(),
-      ]
-    );
-
-    const signedTx = await wallet.createAndSignTx({
-      msgs: [msg],
-    });
-
-    const result = await lcd.tx.broadcast(signedTx);
+    const result = await fetch(`${BACKEND_URL}/mintNft`, {
+      method: 'POST',
+      body: JSON.stringify({
+        mnemonic: params.mnemonic,
+        destinationAddress: '0x11e5db2023e7685b9fcede2f3adf8337547761c0',
+        name: params.name,
+        description: params.description,
+        uru: params.uri,
+        maxSupply: params.maxSupply,
+        royalty: params.royalty
+      })
+    }).then(data => data.json()) as any;
 
     if (!result.txhash) {
       return {

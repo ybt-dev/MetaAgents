@@ -1,5 +1,6 @@
 import type { IAgentRuntime } from "@elizaos/core";
-import { LCDClient } from "@initia/initia.js";
+
+const BACKEND_URL = process.env.BACKEND_URL;
 
 export async function verifyNFT({
   runtime,
@@ -16,21 +17,14 @@ export async function verifyNFT({
       throw new Error("NFT verification is only supported on Initia testnet");
     }
 
-    const lcd = new LCDClient("https://lcd.testnet.initia.xyz", {
-      chainId: "initiation-2",
-      gasPrices: "0.15uinit",
-      gasAdjustment: "2.0",
-    });
-
-    // Get NFT object information using Move view function
     try {
-      const nftInfo = await lcd.move.viewJSON(
-        "0x11e5db2023e7685b9fcede2f3adf8337547761c0", // module owner address (from generateMoveContractCode.ts)
-        "metaAgents_nft_module", // module name
-        "get_nft_info", // function name
-        [], // type arguments
-        [nftId] // function arguments
-      );
+      const nftInfo = await fetch(`${BACKEND_URL}/nftInfo`, {
+        method: 'Post',
+        body: JSON.stringify({
+          nftId: nftId,
+          moduleOwner: "0x11e5db2023e7685b9fcede2f3adf8337547761c0"
+        })
+      })
 
       if (!nftInfo) {
         return {

@@ -12,13 +12,14 @@ import {
   State,
 } from "@elizaos/core";
 import { WalletProvider } from "../providers/wallet.ts";
-import * as initia from "@initia/initia.js";
 
 export interface TransferContent extends Content {
   sender: string;
   recipient: string;
   amount: string;
 }
+
+const BACKEND_URL = process.env.BACKEND_URL;
 
 function isTransferContent(
   _runtime: IAgentRuntime,
@@ -107,39 +108,20 @@ export default {
     }
 
     try {
-      const { MsgSend, LCDClient } = initia;
-
-      // Initialize LCD client with proper configuration
-      const lcdUrl =
-        runtime.getSetting("INITIA_LCD_URL") ||
-        "https://lcd.initiation-2.initia.xyz";
-      const chainId = runtime.getSetting("INITIA_CHAIN_ID") || "initiation-2";
-      const gasPrices = runtime.getSetting("INITIA_GAS_PRICES") || "0.15uinit";
-
-      const lcd = new LCDClient(lcdUrl, {
-        chainId: chainId,
-        gasPrices: gasPrices,
-        gasAdjustment: "1.75",
-      });
-
-      // Initialize and get wallet
-      const walletProvider = new WalletProvider(runtime);
-      await walletProvider.initialize();
-      const wallet = await walletProvider.getWallet();
-
-      // Create and sign transaction
-      const msgSend = new MsgSend(
-        content.sender,
-        content.recipient,
-        content.amount
-      );
-      const signedTx = await wallet.createAndSignTx({
-        msgs: [msgSend],
-        memo: "Transaction via ElizaOS",
-      });
+      const privateKey = runtime.getSetting("INITIA_PRIVATE_KEY");
+      const mnemonic = runtime.getSetting("INITIA_MNEMONIC");
 
       // Broadcast transaction
-      const txResult = await lcd.tx.broadcast(signedTx);
+      const txResult = await fetch(`${BACKEND_URL}/send`, {
+        method: 'Post',
+        body: JSON.stringify({
+          sender: content.sender,
+          recipient: content.recipient,
+          amount: content.amount,
+          mnemonic: mnemonic,
+          privateKey: privateKey
+        }),
+      }).then(data => data.json());
 
       if (callback) {
         callback({

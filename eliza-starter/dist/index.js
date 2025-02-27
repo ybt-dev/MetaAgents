@@ -8,15 +8,15 @@ import {
   AgentRuntime,
   CacheManager,
   DbCacheAdapter,
-  elizaLogger as elizaLogger12,
+  elizaLogger as elizaLogger6,
   ModelProviderName as ModelProviderName5,
   settings
 } from "@elizaos/core";
 import { createNodePlugin } from "@elizaos/plugin-node";
 import bodyParser from "body-parser";
-import fs4 from "fs";
-import path6 from "path";
-import { fileURLToPath as fileURLToPath2 } from "url";
+import fs3 from "fs";
+import path3 from "path";
+import { fileURLToPath } from "url";
 
 // src/utils/twitter-topic.ts
 var TABLE_TOPIC_KEY = "twitter/current_topic";
@@ -128,7 +128,7 @@ var communicateWithAgents = {
 };
 
 // src/utils/character-generator.ts
-import * as crypto2 from "crypto-js";
+import crypto2 from "crypto-js";
 import { Clients as Clients4, ModelProviderName as ModelProviderName4 } from "@elizaos/core";
 
 // src/characters/advertiser.ts
@@ -480,248 +480,32 @@ var imageGenerationPlugin = {
 // src/characters/advertiser.ts
 import { bootstrapPlugin } from "@elizaos/plugin-bootstrap";
 
-// src/plugin/suiPlugin/actions/transfer.ts
+// src/plugin/initiaPlugin/actions/transfer.ts
 import {
-  ModelClass as ModelClass2,
-  ServiceType,
   composeContext,
-  elizaLogger as elizaLogger4,
-  generateObject
+  elizaLogger as elizaLogger3,
+  generateObjectDeprecated,
+  ModelClass as ModelClass2
 } from "@elizaos/core";
-import { z as z2 } from "zod";
-import { SuiClient as SuiClient2, getFullnodeUrl as getFullnodeUrl2 } from "@mysten/sui/client";
-import { Transaction } from "@mysten/sui/transactions";
-import { SUI_DECIMALS } from "@mysten/sui/utils";
-
-// src/plugin/suiPlugin/providers/wallet.ts
-import {
-  elizaLogger as elizaLogger3
-} from "@elizaos/core";
-import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
-import { MIST_PER_SUI } from "@mysten/sui/utils";
-import BigNumber from "bignumber.js";
-import NodeCache from "node-cache";
-import * as path2 from "path";
-
-// src/plugin/suiPlugin/utils.ts
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
-import { Secp256k1Keypair } from "@mysten/sui/keypairs/secp256k1";
-import { Secp256r1Keypair } from "@mysten/sui/keypairs/secp256r1";
-var parseAccount = (runtime) => {
-  const privateKey = runtime.getSetting("SUI_PRIVATE_KEY");
-  if (!privateKey) {
-    throw new Error("SUI_PRIVATE_KEY is not set");
-  }
-  if (privateKey.startsWith("suiprivkey")) {
-    return loadFromSecretKey(privateKey);
-  }
-  return loadFromMnemonics(privateKey);
-};
-var loadFromSecretKey = (privateKey) => {
-  const keypairClasses = [Ed25519Keypair, Secp256k1Keypair, Secp256r1Keypair];
-  for (const KeypairClass of keypairClasses) {
-    try {
-      return KeypairClass.fromSecretKey(privateKey);
-    } catch {
-    }
-  }
-  throw new Error("Failed to initialize keypair from secret key");
-};
-var loadFromMnemonics = (mnemonics) => {
-  const keypairMethods = [
-    { Class: Ed25519Keypair, method: "deriveKeypairFromSeed" },
-    { Class: Secp256k1Keypair, method: "deriveKeypair" },
-    { Class: Secp256r1Keypair, method: "deriveKeypair" }
-  ];
-  for (const { Class, method } of keypairMethods) {
-    try {
-      return Class[method](mnemonics);
-    } catch {
-    }
-  }
-  throw new Error("Failed to derive keypair from mnemonics");
-};
-
-// src/plugin/suiPlugin/providers/wallet.ts
-import axios from "axios";
-var PROVIDER_CONFIG = {
-  MAX_RETRIES: 3,
-  RETRY_DELAY: 2e3
-};
-var cacheTimeSeconds = 30;
-var WalletProvider = class {
-  constructor(suiClient, address, cacheManager) {
-    this.suiClient = suiClient;
-    this.address = address;
-    this.cacheManager = cacheManager;
-    this.cache = new NodeCache({ stdTTL: cacheTimeSeconds });
-  }
-  cache;
-  cacheKey = "sui/wallet";
-  async readFromCache(key) {
-    const cached = await this.cacheManager.get(
-      path2.join(this.cacheKey, key)
-    );
-    return cached;
-  }
-  async writeToCache(key, data) {
-    await this.cacheManager.set(path2.join(this.cacheKey, key), data, {
-      expires: Date.now() + cacheTimeSeconds * 1e3
-    });
-  }
-  async getCachedData(key) {
-    const cachedData = this.cache.get(key);
-    if (cachedData) {
-      return cachedData;
-    }
-    const fileCachedData = await this.readFromCache(key);
-    if (fileCachedData) {
-      this.cache.set(key, fileCachedData);
-      return fileCachedData;
-    }
-    return null;
-  }
-  async setCachedData(cacheKey, data) {
-    this.cache.set(cacheKey, data);
-    await this.writeToCache(cacheKey, data);
-  }
-  async fetchPricesWithRetry() {
-    let lastError;
-    for (let i = 0; i < PROVIDER_CONFIG.MAX_RETRIES; i++) {
-      try {
-        const cetusSuiUsdcPoolAddr = "0x51e883ba7c0b566a26cbc8a94cd33eb0abd418a77cc1e60ad22fd9b1f29cd2ab";
-        const url = `https://api.dexscreener.com/latest/dex/pairs/sui/${cetusSuiUsdcPoolAddr}`;
-        elizaLogger3.info(`Fetching SUI price from ${url}`);
-        const response = await axios.get(url);
-        return response.data;
-      } catch (error) {
-        console.error(`Attempt ${i + 1} failed:`, error);
-        lastError = error;
-        if (i < PROVIDER_CONFIG.MAX_RETRIES - 1) {
-          const delay = PROVIDER_CONFIG.RETRY_DELAY * Math.pow(2, i);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
-      }
-    }
-    console.error("All attempts failed. Throwing the last error:", lastError);
-    throw lastError;
-  }
-  async fetchPortfolioValue() {
-    try {
-      const cacheKey = `portfolio-${this.address}`;
-      const cachedValue = await this.getCachedData(cacheKey);
-      if (cachedValue) {
-        console.log("Cache hit for fetchPortfolioValue", cachedValue);
-        return cachedValue;
-      }
-      console.log("Cache miss for fetchPortfolioValue");
-      const prices = await this.fetchPrices().catch((error) => {
-        console.error("Error fetching SUI price:", error);
-        throw error;
-      });
-      const suiAmountOnChain = await this.suiClient.getBalance({
-        owner: this.address
-      }).catch((error) => {
-        console.error("Error fetching SUI amount:", error);
-        throw error;
-      });
-      const suiAmount = Number.parseInt(suiAmountOnChain.totalBalance) / Number(MIST_PER_SUI);
-      const totalUsd = new BigNumber(suiAmount).times(prices.sui.usd);
-      const portfolio = {
-        totalUsd: totalUsd.toString(),
-        totalSui: suiAmount.toString()
-      };
-      this.setCachedData(cacheKey, portfolio);
-      console.log("Fetched portfolio:", portfolio);
-      return portfolio;
-    } catch (error) {
-      console.error("Error fetching portfolio:", error);
-      throw error;
-    }
-  }
-  async fetchPrices() {
-    try {
-      const cacheKey = "prices";
-      const cachedValue = await this.getCachedData(cacheKey);
-      if (cachedValue) {
-        console.log("Cache hit for fetchPrices");
-        return cachedValue;
-      }
-      console.log("Cache miss for fetchPrices");
-      const suiPriceData = await this.fetchPricesWithRetry().catch((error) => {
-        console.error("Error fetching SUI price:", error);
-        throw error;
-      });
-      const prices = {
-        sui: { usd: (1 / suiPriceData.pair.priceNative).toString() }
-      };
-      this.setCachedData(cacheKey, prices);
-      return prices;
-    } catch (error) {
-      console.error("Error fetching prices:", error);
-      throw error;
-    }
-  }
-  formatPortfolio(runtime, portfolio) {
-    let output = `${runtime.character.name}
-`;
-    output += `Wallet Address: ${this.address}
-`;
-    const totalUsdFormatted = new BigNumber(portfolio.totalUsd).toFixed(2);
-    const totalSuiFormatted = new BigNumber(portfolio.totalSui).toFixed(4);
-    output += `Total Value: $${totalUsdFormatted} (${totalSuiFormatted} SUI)
-`;
-    return output;
-  }
-  async getFormattedPortfolio(runtime) {
-    try {
-      const portfolio = await this.fetchPortfolioValue();
-      return this.formatPortfolio(runtime, portfolio);
-    } catch (error) {
-      console.error("Error generating portfolio report:", error);
-      return "Unable to fetch wallet information. Please try again later.";
-    }
-  }
-};
-var walletProvider = {
-  get: async (runtime, _message, _state) => {
-    const suiAccount = parseAccount(runtime);
-    try {
-      const suiClient = new SuiClient({
-        url: getFullnodeUrl(runtime.getSetting("SUI_NETWORK"))
-      });
-      const provider = new WalletProvider(
-        suiClient,
-        suiAccount.toSuiAddress(),
-        runtime.cacheManager
-      );
-      return await provider.getFormattedPortfolio(runtime);
-    } catch (error) {
-      console.error("Error in wallet provider:", error);
-      return null;
-    }
-  }
-};
-
-// src/plugin/suiPlugin/actions/transfer.ts
-function isTransferContent(content) {
-  console.log("Content for transfer", content);
-  return typeof content.recipient === "string" && (typeof content.amount === "string" || typeof content.amount === "number");
+var BACKEND_URL = "http://localhost:3000/initia";
+function isTransferContent(_runtime, content) {
+  return typeof content.sender === "string" && typeof content.recipient === "string" && typeof content.amount === "string";
 }
-var transferTemplate = `Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
+var transferTemplate = `Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannt be determined.
 
 Example response:
 \`\`\`json
 {
-    "recipient": "0xaa000b3651bd1e57554ebd7308ca70df7c8c0e8e09d67123cc15c8a8a79342b3",
-    "amount": "1"
+    "sender": "init18sj3x80fdjc6gzfvwl7lf8sxcvuvqjpvcmp6np",
+    "recipient": "init1kdwzpz3wzvpdj90gtga4fw5zm9tk4cyrgnjauu",
+    "amount": "1000uinit",
 }
 \`\`\`
 
 {{recentMessages}}
 
 Given the recent messages, extract the following information about the requested token transfer:
+- Sender wallet address
 - Recipient wallet address
 - Amount to transfer
 
@@ -729,43 +513,35 @@ Respond with a JSON markdown block containing only the extracted values.`;
 var transfer_default = {
   name: "SEND_TOKEN",
   similes: [
-    "TRANSFER_TOKEN",
-    "TRANSFER_TOKENS",
-    "SEND_TOKENS",
-    "SEND_SUI",
-    "PAY"
+    "TRANSFER_TOKEN_ON_INITIA",
+    "TRANSFER_TOKENS_ON_INITIA",
+    "SEND_TOKEN_ON_INITIA",
+    "SEND_TOKENS_ON_INITIA",
+    "PAY_ON_INITIA"
   ],
-  validate: async (runtime, message) => {
-    console.log("Validating sui transfer from user:", message.userId);
-    return true;
+  description: "",
+  validate: async (runtime, _message) => {
+    const privateKey = runtime.getSetting("INITIA_PRIVATE_KEY");
+    const mnemonic = runtime.getSetting("INITIA_MNEMONIC");
+    return typeof privateKey === "string" && privateKey.length === 64 || typeof mnemonic === "string" && mnemonic.length > 0;
   },
-  description: "Transfer tokens from the agent's wallet to another address",
   handler: async (runtime, message, state, _options, callback) => {
-    elizaLogger4.log("Starting SEND_TOKEN handler...");
-    const walletInfo = await walletProvider.get(runtime, message, state);
-    state.walletInfo = walletInfo;
-    if (!state) {
-      state = await runtime.composeState(message);
+    let currentState = state;
+    if (!currentState) {
+      currentState = await runtime.composeState(message);
     } else {
-      state = await runtime.updateRecentMessageState(state);
+      currentState = await runtime.updateRecentMessageState(currentState);
     }
-    const transferSchema = z2.object({
-      recipient: z2.string(),
-      amount: z2.union([z2.string(), z2.number()])
-    });
     const transferContext = composeContext({
-      state,
+      state: currentState,
       template: transferTemplate
     });
-    const content = await generateObject({
+    const content = await generateObjectDeprecated({
       runtime,
       context: transferContext,
-      schema: transferSchema,
-      modelClass: ModelClass2.SMALL
+      modelClass: ModelClass2.LARGE
     });
-    const transferContent = content.object;
-    if (!isTransferContent(transferContent)) {
-      console.error("Invalid content for TRANSFER_TOKEN action.");
+    if (!isTransferContent(runtime, content)) {
       if (callback) {
         callback({
           text: "Unable to process transfer request. Invalid content provided.",
@@ -775,49 +551,35 @@ var transfer_default = {
       return false;
     }
     try {
-      const suiAccount = parseAccount(runtime);
-      const network = runtime.getSetting("SUI_NETWORK");
-      const suiClient = new SuiClient2({
-        url: getFullnodeUrl2(network)
-      });
-      const adjustedAmount = BigInt(
-        Number(transferContent.amount) * Math.pow(10, SUI_DECIMALS)
-      );
-      console.log(
-        `Transferring: ${transferContent.amount} tokens (${adjustedAmount} base units)`
-      );
-      const tx = new Transaction();
-      const [coin] = tx.splitCoins(tx.gas, [adjustedAmount]);
-      tx.transferObjects([coin], transferContent.recipient);
-      const executedTransaction = await suiClient.signAndExecuteTransaction({
-        signer: suiAccount,
-        transaction: tx
-      });
-      console.log("Transfer successful:", executedTransaction.digest);
+      const privateKey = runtime.getSetting("INITIA_PRIVATE_KEY");
+      const mnemonic = runtime.getSetting("INITIA_MNEMONIC");
+      const txResult = await fetch(`${BACKEND_URL}/send`, {
+        method: "Post",
+        body: JSON.stringify({
+          sender: content.sender,
+          recipient: content.recipient,
+          amount: content.amount,
+          mnemonic,
+          privateKey
+        })
+      }).then((data) => data.json());
       if (callback) {
-        const suiService = runtime.getService(
-          ServiceType.TRANSCRIPTION
-        );
-        const txLink = await suiService.getTransactionLink(
-          executedTransaction.digest
-        );
         callback({
-          text: `Successfully transferred ${transferContent.amount} SUI to ${transferContent.recipient}, Transaction: ${txLink}`,
-          content: {
-            success: true,
-            hash: executedTransaction.digest,
-            amount: transferContent.amount,
-            recipient: transferContent.recipient
-          }
+          text: `Successfully transferred INITIA.
+Transaction Hash: ${txResult.txhash}
+Sender: ${content.sender}
+Recipient: ${content.recipient}
+Amount: ${content.amount}`,
+          content: txResult
         });
       }
       return true;
-    } catch (error) {
-      console.error("Error during token transfer:", error);
+    } catch (e) {
+      elizaLogger3.error("Failed to transfer INITIA:", e.message);
       if (callback) {
         callback({
-          text: `Error transferring tokens: ${error.message}`,
-          content: { error: error.message }
+          text: `Failed to transfer INITIA: ${e.message}`,
+          content: { error: e.message }
         });
       }
       return false;
@@ -828,399 +590,98 @@ var transfer_default = {
       {
         user: "{{user1}}",
         content: {
-          text: "Send 1 SUI tokens to 0x4f2e63be8e7fe287836e29cde6f3d5cbc96eefd0c0e3f3747668faa2ae7324b0"
+          text: "Hey send 1 INIT to init18sj3x80fdjc6gzfvwl7lf8sxcvuvqjpvcmp6np."
         }
       },
       {
         user: "{{user2}}",
         content: {
-          text: "I'll send 1 SUI tokens now...",
-          action: "SEND_TOKEN"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Successfully sent 1 SUI tokens to 0x4f2e63be8e7fe287836e29cde6f3d5cbc96eefd0c0e3f3747668faa2ae7324b0, Transaction: 0x39a8c432d9bdad993a33cc1faf2e9b58fb7dd940c0425f1d6db3997e4b4b05c0"
+          text: "Sure! I am going to send 1 INIT to init18sj3x80fdjc6gzfvwl7lf8sxcvuvqjpvcmp6np."
         }
       }
     ]
   ]
 };
 
-// src/plugin/suiPlugin/services/sui.ts
-import {
-  elizaLogger as elizaLogger5,
-  Service,
-  ServiceType as ServiceType2
-} from "@elizaos/core";
-import { getFullnodeUrl as getFullnodeUrl3, SuiClient as SuiClient3 } from "@mysten/sui/client";
-import { AggregatorClient, Env } from "@cetusprotocol/aggregator-sdk";
-import BN from "bn.js";
-
-// src/plugin/suiPlugin/tokens.ts
-import { SUI_DECIMALS as SUI_DECIMALS2 } from "@mysten/sui/utils";
-var tokens = /* @__PURE__ */ new Map([
-  [
-    "SUI",
-    {
-      symbol: "SUI",
-      decimals: SUI_DECIMALS2,
-      tokenAddress: "0x2::sui::SUI"
+// src/plugin/initiaPlugin/providers/wallet.ts
+var BACKEND_URL2 = "http://localhost:3000/initia";
+var WalletProvider = class {
+  wallet = null;
+  restClient = null;
+  runtime;
+  constructor(runtime) {
+    this.runtime = runtime;
+  }
+  async initialize(runtime) {
+    if (runtime) {
+      this.runtime = runtime;
     }
-  ],
-  [
-    "USDC",
-    {
-      symbol: "USDC",
-      decimals: 6,
-      tokenAddress: "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC"
+  }
+  getWallet() {
+    if (this.wallet == null) {
+      throw new Error("Initia wallet is not configured.");
     }
-  ]
-]);
-var getTokenMetadata = (symbol) => {
-  return tokens.get(symbol.toUpperCase());
-};
-
-// src/plugin/suiPlugin/services/sui.ts
-import {
-  Transaction as Transaction2
-} from "@mysten/sui/transactions";
-var aggregatorURL = "https://api-sui.cetus.zone/router_v2/find_routes";
-var SuiService = class extends Service {
-  static serviceType = ServiceType2.TRANSCRIPTION;
-  suiClient;
-  network;
-  wallet;
-  initialize(runtime) {
-    this.suiClient = new SuiClient3({
-      url: getFullnodeUrl3(runtime.getSetting("SUI_NETWORK"))
+    return this.wallet;
+  }
+  async getAddress() {
+    const privateKey = this.runtime.getSetting("INITIA_PRIVATE_KEY");
+    const mnemonic = this.runtime.getSetting("INITIA_MNEMONIC");
+    const res = await fetch(`${BACKEND_URL2}/address`, {
+      method: "Post",
+      body: JSON.stringify({
+        mnemonic,
+        privateKey
+      })
     });
-    this.network = runtime.getSetting("SUI_NETWORK");
-    this.wallet = parseAccount(runtime);
-    return null;
+    return res;
   }
-  async getTokenMetadata(token) {
-    const meta = getTokenMetadata(token);
-    return meta;
-  }
-  getAddress() {
-    return this.wallet.toSuiAddress();
-  }
-  getAmount(amount, meta) {
-    return BigInt(Number(amount) * Math.pow(10, meta.decimals));
-  }
-  getNetwork() {
-    return this.network;
-  }
-  getTransactionLink(tx) {
-    if (this.network === "mainnet") {
-      return `https://suivision.xyz/txblock/${tx}`;
-    } else if (this.network === "testnet") {
-      return `https://testnet.suivision.xyz/txblock/${tx}`;
-    } else if (this.network === "devnet") {
-      return `https://devnet.suivision.xyz/txblock/${tx}`;
-    } else if (this.network === "localnet") {
-      return `localhost : ${tx}`;
-    }
-  }
-  async swapToken(fromToken, amount, out_min_amount, targetToken) {
-    const fromMeta = getTokenMetadata(fromToken);
-    const toMeta = getTokenMetadata(targetToken);
-    elizaLogger5.info("From token metadata:", fromMeta);
-    elizaLogger5.info("To token metadata:", toMeta);
-    const client = new AggregatorClient(
-      aggregatorURL,
-      this.wallet.toSuiAddress(),
-      this.suiClient,
-      Env.Mainnet
-    );
-    const routerRes = await client.findRouters({
-      from: fromMeta.tokenAddress,
-      target: toMeta.tokenAddress,
-      amount: new BN(amount),
-      byAmountIn: true,
-      // `true` means fix input amount, `false` means fix output amount
-      depth: 3,
-      // max allow 3, means 3 hops
-      providers: [
-        "KRIYAV3",
-        "CETUS",
-        "SCALLOP",
-        "KRIYA",
-        "BLUEFIN",
-        "DEEPBOOKV3",
-        "FLOWXV3",
-        "BLUEMOVE",
-        "AFTERMATH",
-        "FLOWX",
-        "TURBOS"
-        // "AFSUI",
-        // "VOLO",
-        // "SPRINGSUI",
-        // "ALPHAFI",
-        // "HAEDAL",
-        // "HAEDALPMM",
-      ]
+  async getBalance() {
+    const privateKey = this.runtime.getSetting("INITIA_PRIVATE_KEY");
+    const mnemonic = this.runtime.getSetting("INITIA_MNEMONIC");
+    const res = await fetch(`${BACKEND_URL2}/address`, {
+      method: "Post",
+      body: JSON.stringify({
+        mnemonic,
+        privateKey
+      })
     });
-    if (routerRes === null) {
-      elizaLogger5.error(
-        "No router found" + JSON.stringify({
-          from: fromMeta.tokenAddress,
-          target: toMeta.tokenAddress,
-          amount
-        })
-      );
-      return {
-        success: false,
-        tx: "",
-        message: "No router found"
-      };
-    }
-    if (routerRes.amountOut.toNumber() < out_min_amount) {
-      return {
-        success: false,
-        tx: "",
-        message: "Out amount is less than out_min_amount"
-      };
-    }
-    let coin;
-    const routerTx = new Transaction2();
-    if (fromToken.toUpperCase() === "SUI") {
-      coin = routerTx.splitCoins(routerTx.gas, [amount]);
-    } else {
-      const allCoins = await this.suiClient.getCoins({
-        owner: this.wallet.toSuiAddress(),
-        coinType: fromMeta.tokenAddress,
-        limit: 30
-      });
-      if (allCoins.data.length === 0) {
-        elizaLogger5.error("No coins found");
-        return {
-          success: false,
-          tx: "",
-          message: "No coins found"
-        };
-      }
-      const mergeCoins = [];
-      for (let i = 1; i < allCoins.data.length; i++) {
-        elizaLogger5.info("Coin:", allCoins.data[i]);
-        mergeCoins.push(allCoins.data[i].coinObjectId);
-      }
-      elizaLogger5.info("Merge coins:", mergeCoins);
-      routerTx.mergeCoins(allCoins.data[0].coinObjectId, mergeCoins);
-      coin = routerTx.splitCoins(allCoins.data[0].coinObjectId, [amount]);
-    }
-    const targetCoin = await client.routerSwap({
-      routers: routerRes.routes,
-      byAmountIn: true,
-      txb: routerTx,
-      inputCoin: coin,
-      slippage: 0.5
-    });
-    routerTx.transferObjects([targetCoin], this.wallet.toSuiAddress());
-    routerTx.setSender(this.wallet.toSuiAddress());
-    const result = await client.signAndExecuteTransaction(
-      routerTx,
-      this.wallet
-    );
-    await this.suiClient.waitForTransaction({
-      digest: result.digest
-    });
-    return {
-      success: true,
-      tx: result.digest,
-      message: "Swap successful"
-    };
+    return res;
   }
 };
-
-// src/plugin/suiPlugin/actions/swap.ts
-import {
-  ModelClass as ModelClass3,
-  ServiceType as ServiceType3,
-  composeContext as composeContext2,
-  elizaLogger as elizaLogger6,
-  generateObject as generateObject2
-} from "@elizaos/core";
-import { z as z3 } from "zod";
-function isSwapContent(content) {
-  console.log("Content for transfer", content);
-  return typeof content.from_token === "string" && typeof content.destination_token === "string" && (typeof content.amount === "string" || typeof content.amount === "number");
-}
-var swapTemplate = `Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined.
-
-Example response:
-\`\`\`json
-{
-    "from_token": "sui",
-    "destination_token": "usdc",
-    "amount": "1"
-}
-\`\`\`
-
-{{recentMessages}}
-
-Given the recent messages, extract the following information about the requested token swap:
-- Source Token you want to swap from
-- Destination token you want to swap to
-- Source Token Amount to swap
-
-
-Respond with a JSON markdown block containing only the extracted values.`;
-var swap_default = {
-  name: "SWAP_TOKEN",
-  similes: ["SWAP_TOKENS", "SWAP_SUI"],
-  validate: async (runtime, message) => {
-    console.log("Validating sui transfer from user:", message.userId);
-    return true;
-  },
-  description: "Swap from any token in the agent's wallet to another token",
-  handler: async (runtime, message, state, _options, callback) => {
-    elizaLogger6.log("Starting SWAP_TOKEN handler...");
-    const service = runtime.getService(ServiceType3.TRANSCRIPTION);
-    if (!state) {
-      state = await runtime.composeState(message);
-    } else {
-      state = await runtime.updateRecentMessageState(state);
+var initiaWalletProvider = {
+  async get(runtime, _message, _state) {
+    if (!runtime.getSetting("INITIA_PRIVATE_KEY")) {
+      return null;
     }
-    const swapSchema = z3.object({
-      from_token: z3.string(),
-      destination_token: z3.string(),
-      amount: z3.union([z3.string(), z3.number()])
-    });
-    const swapContext = composeContext2({
-      state,
-      template: swapTemplate
-    });
-    const content = await generateObject2({
-      runtime,
-      context: swapContext,
-      schema: swapSchema,
-      modelClass: ModelClass3.SMALL
-    });
-    console.log("Generated content:", content);
-    const swapContent = content.object;
-    elizaLogger6.info("Swap content:", swapContent);
-    if (service.getNetwork() == "mainnet") {
-      if (!isSwapContent(swapContent)) {
-        console.error("Invalid content for SWAP_TOKEN action.");
-        if (callback) {
-          callback({
-            text: "Unable to process swap request. Invalid content provided.",
-            content: { error: "Invalid transfer content" }
-          });
-        }
-        return false;
-      }
-      const destinationToken = await service.getTokenMetadata(
-        swapContent.destination_token
-      );
-      elizaLogger6.log("Destination token:", destinationToken);
-      const fromToken = await service.getTokenMetadata(swapContent.from_token);
-      elizaLogger6.log("From token:", fromToken);
-      if (destinationToken && fromToken) {
-        try {
-          const swapAmount = service.getAmount(swapContent.amount, fromToken);
-          elizaLogger6.info("Swap amount:", swapAmount);
-          elizaLogger6.info(
-            "Destination token address:",
-            destinationToken.tokenAddress
-          );
-          elizaLogger6.info("From token address:", fromToken.tokenAddress);
-          elizaLogger6.info("Swap amount:", swapAmount);
-          const result = await service.swapToken(
-            fromToken.symbol,
-            swapAmount.toString(),
-            0,
-            destinationToken.symbol
-          );
-          if (result.success) {
-            callback({
-              text: `Successfully swapped ${swapContent.amount} ${swapContent.from_token} to  ${swapContent.destination_token}, Transaction: ${service.getTransactionLink(result.tx)}`,
-              content: swapContent
-            });
-          }
-        } catch (error) {
-          elizaLogger6.error("Error swapping token:", error);
-          callback({
-            text: `Failed to swap ${error}, swapContent : ${JSON.stringify(
-              swapContent
-            )}`,
-            content: { error: "Failed to swap token" }
-          });
-        }
+    try {
+      const nodeUrl = runtime.getSetting("INITIA_NODE_URL");
+      const chainId = runtime.getSetting("INITIA_CHAIN_ID");
+      let walletProvider;
+      if (nodeUrl === null || chainId === null) {
+        walletProvider = new WalletProvider(runtime);
       } else {
-        callback({
-          text: `destination token: ${swapContent.destination_token} or from token: ${swapContent.from_token} not found`,
-          content: { error: "Destination token not found" }
-        });
+        walletProvider = new WalletProvider(runtime);
       }
-    } else {
-      callback({
-        text: "Sorry, I can only swap on the mainnet, parsed params : " + JSON.stringify(swapContent, null, 2),
-        content: { error: "Unsupported network" }
-      });
-      return false;
+      await walletProvider.initialize();
+      const address = walletProvider.getAddress();
+      const balance = await walletProvider.getBalance();
+      return `Initia Wallet Address: ${address}
+Balance: ${balance} INIT`;
+    } catch (e) {
+      console.error("Error during configuring initia wallet provider", e);
+      return null;
     }
-    return true;
-  },
-  examples: [
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Swap 1 SUI to USDC"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "I'll help you swap 1 SUI to USDC now...",
-          action: "SWAP_TOKEN"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Successfully swapped 1 SUI to USDC, Transaction: 0x39a8c432d9bdad993a33cc1faf2e9b58fb7dd940c0425f1d6db3997e4b4b05c0"
-        }
-      }
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Swap 1 USDC to SUI"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "I'll help you swap 1 SUI to USDC now...",
-          action: "SWAP_TOKEN"
-        }
-      },
-      {
-        user: "{{user2}}",
-        content: {
-          text: "Successfully swapped 1 SUI to USDC, Transaction: 0x39a8c432d9bdad993a33cc1faf2e9b58fb7dd940c0425f1d6db3997e4b4b05c0"
-        }
-      }
-    ]
-  ]
+  }
 };
 
-// src/plugin/suiPlugin/index.ts
-var suiPlugin = {
-  name: "sui",
-  description: "Sui Plugin for Eliza",
-  actions: [transfer_default, swap_default],
+// src/plugin/initiaPlugin/src/index.ts
+var initiaPlugin = {
+  name: "initiaPlugin",
+  description: "Initia Plugin for Eliza",
+  actions: [transfer_default],
   evaluators: [],
-  providers: [walletProvider],
-  services: [new SuiService()]
+  providers: [initiaWalletProvider]
 };
-var suiPlugin_default = suiPlugin;
 
 // src/characters/advertiser.ts
 var ADVERTISER_AGENT_ID = "58c9913b-a8ff-4cff-87d9-fbdb1b25ff34";
@@ -1231,7 +692,7 @@ var advertiser = {
   clients: [Clients.TWITTER],
   modelProvider: ModelProviderName.OPENROUTER,
   imageModelProvider: ModelProviderName.TOGETHER,
-  plugins: [imageGenerationPlugin, bootstrapPlugin, suiPlugin_default],
+  plugins: [imageGenerationPlugin, bootstrapPlugin, initiaPlugin],
   settings: {
     voice: {
       model: "en_US-male-medium"
@@ -1341,872 +802,6 @@ import {
   defaultCharacter as defaultCharacter2
 } from "@elizaos/core";
 import { bootstrapPlugin as bootstrapPlugin2 } from "@elizaos/plugin-bootstrap";
-
-// src/plugin/nftPlugin/actions/mintNft.ts
-import {
-  composeContext as composeContext3,
-  elizaLogger as elizaLogger7,
-  generateObject as generateObject3,
-  ModelClass as ModelClass4
-} from "@elizaos/core";
-
-// src/plugin/nftPlugin/templates/index.ts
-var createCollectionTemplate = `Given the recent messages and wallet information below:
-
-{{recentMessages}}
-
-{{walletInfo}}
-
-Extract the following information about the requested transfer:
-- chainName to execute on: Must be one of ["sui", "ethereum", "base", ...]
-
-Respond with a JSON markdown block containing only the extracted values. All fields are required:
-
-\`\`\`json
-{
-    "chainName": SUPPORTED_CHAINS,
-    "packageId": null
-}
-\`\`\`
-
-Note: For Sui chain, include the packageId from the deployment output if available.
-`;
-var mintNFTTemplate = `Respond with a JSON markdown block containing only the extracted values. Use null for any values that cannot be determined:
-
-\`\`\`json
-{
-    "collectionAddress": null,
-    "chainName": SUPPORTED_CHAINS,
-    "packageId": null
-}
-\`\`\`
-
-{{recentMessages}}
-
-Given the recent messages, extract the following information about the requested mint nft:
-- collection contract address (for EVM chains) or packageId (for Sui)
-- chain name
-
-Note: For Sui chain, use the packageId from the deployment output. For other chains, use the collection contract address.`;
-
-// src/plugin/nftPlugin/types/index.ts
-import { z as z4 } from "zod";
-var MintNFTSchema = z4.object({
-  collectionAddress: z4.string()
-});
-var CreateCollectionSchema = z4.object({
-  name: z4.string(),
-  symbol: z4.string(),
-  description: z4.string().optional()
-});
-
-// src/plugin/nftPlugin/actions/mintNft.ts
-import { SuiClient as SuiClient4, getFullnodeUrl as getFullnodeUrl4 } from "@mysten/sui/client";
-
-// src/plugin/nftPlugin/utils/generateMoveContractCode.ts
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
-import fs2 from "node:fs";
-import path3 from "node:path";
-import { execSync } from "child_process";
-var MOVE_TOML_TEMPLATE = `[package]
-name = "{{packageName}}"
-version = "0.0.1"
-
-[dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet", override = true }
-
-[addresses]
-nft = "0x0"
-`;
-var CONTRACT_TEMPLATE = `module nft::nft_collection {
-    use sui::object::{Self, ID, UID};
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
-    use sui::url::{Self, Url};
-    use sui::event;
-    use sui::package;
-    use std::string::{Self, String};
-
-    /// One-Time-Witness for the module
-    struct NFT_COLLECTION has drop {}
-
-    /// Event emitted when a new NFT is minted
-    struct NFTMinted has copy, drop {
-        object_id: ID,
-        creator: address,
-        name: String
-    }
-
-    /// The Collection capability
-    struct CollectionCap has key {
-        id: UID,
-        collection_id: ID
-    }
-
-    /// The Collection object
-    struct Collection has key {
-        id: UID,
-        name: String,
-        symbol: String,
-        description: String,
-        minted: u64,
-        max_supply: u64
-    }
-
-    /// The NFT object
-    struct NFT has key, store {
-        id: UID,
-        name: String,
-        description: String,
-        url: Url,
-        collection: ID
-    }
-
-    // ======= Error Constants =======
-    const EMaxSupplyReached: u64 = 0;
-    const EInvalidCollection: u64 = 1;
-
-    fun init(witness: NFT_COLLECTION, ctx: &mut TxContext) {
-        let publisher = package::claim(witness, ctx);
-        package::burn_publisher(publisher);
-    }
-
-    /// Create a new collection
-    public entry fun create_collection(
-        name: vector<u8>,
-        symbol: vector<u8>,
-        description: vector<u8>,
-        max_supply: u64,
-        ctx: &mut TxContext
-    ) {
-        let collection = Collection {
-            id: object::new(ctx),
-            name: string::utf8(name),
-            symbol: string::utf8(symbol),
-            description: string::utf8(description),
-            minted: 0,
-            max_supply
-        };
-
-        let collection_id = object::id(&collection);
-        
-        let cap = CollectionCap {
-            id: object::new(ctx),
-            collection_id
-        };
-
-        // Transfer the collection object
-        transfer::share_object(collection);
-        // Transfer the capability to the creator
-        transfer::transfer(cap, tx_context::sender(ctx));
-    }
-
-    /// Mint a new NFT
-    public entry fun mint_nft(
-        _cap: &CollectionCap,
-        collection: &mut Collection,
-        name: vector<u8>,
-        description: vector<u8>,
-        url: vector<u8>,
-        ctx: &mut TxContext
-    ) {
-        // Check max supply
-        assert!(collection.minted < collection.max_supply, EMaxSupplyReached);
-        
-        let nft = NFT {
-            id: object::new(ctx),
-            name: string::utf8(name),
-            description: string::utf8(description),
-            url: url::new_unsafe_from_bytes(url),
-            collection: object::id(collection)
-        };
-
-        collection.minted = collection.minted + 1;
-
-        // Emit mint event
-        event::emit(NFTMinted {
-            object_id: object::id(&nft),
-            creator: tx_context::sender(ctx),
-            name: nft.name
-        });
-
-        // Transfer NFT to the caller
-        transfer::transfer(nft, tx_context::sender(ctx));
-    }
-
-    // ======= View Functions =======
-    
-    /// Get collection info
-    public fun collection_info(collection: &Collection): (String, String, String, u64, u64) {
-        (
-            collection.name,
-            collection.symbol,
-            collection.description,
-            collection.minted,
-            collection.max_supply
-        )
-    }
-}`;
-async function generateMoveContract(config) {
-  const currentDir = dirname(fileURLToPath(import.meta.url));
-  const packageDir = path3.join(currentDir, "../contract", config.packageName);
-  if (!fs2.existsSync(packageDir)) {
-    fs2.mkdirSync(packageDir, { recursive: true });
-  }
-  const sourcesDir = path3.join(packageDir, "sources");
-  if (!fs2.existsSync(sourcesDir)) {
-    fs2.mkdirSync(sourcesDir);
-  }
-  const moveToml = MOVE_TOML_TEMPLATE.replace(
-    /{{packageName}}/g,
-    config.packageName
-  );
-  fs2.writeFileSync(path3.join(packageDir, "Move.toml"), moveToml);
-  const contractPath = path3.join(sourcesDir, "nft_collection.move");
-  const contractCode = CONTRACT_TEMPLATE;
-  fs2.writeFileSync(contractPath, contractCode);
-  return {
-    code: contractCode,
-    path: contractPath,
-    packagePath: packageDir
-  };
-}
-async function compileMoveContract(packagePath) {
-  try {
-    const suiVersion = execSync("sui --version").toString();
-    console.log("Sui version:", suiVersion);
-    const output = execSync(`sui move build --path ${packagePath}`, {
-      encoding: "utf8"
-    });
-    return {
-      compiled: true,
-      output
-    };
-  } catch (error) {
-    console.error("Error compiling Move contract:", error);
-    return {
-      compiled: false,
-      error: error.message
-    };
-  }
-}
-async function publishMoveContract(packagePath) {
-  try {
-    const output = execSync(
-      `sui client publish ${packagePath} --gas-budget 100000000 --json`,
-      {
-        encoding: "utf8"
-      }
-    );
-    const result = JSON.parse(output);
-    const effects = result.effects;
-    const created = effects?.created || [];
-    const packageId = created.find((obj) => obj.owner === "Immutable")?.reference?.objectId;
-    if (!packageId) {
-      return {
-        success: false,
-        error: "Could not find package ID in transaction output",
-        output
-      };
-    }
-    return {
-      success: true,
-      packageId,
-      output
-    };
-  } catch (error) {
-    console.error("Error publishing Move contract:", error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}
-async function mintNFT(packageId, params) {
-  try {
-    const nameHex = Buffer.from(params.name).toString("hex");
-    const descriptionHex = Buffer.from(params.description).toString("hex");
-    const urlHex = Buffer.from(params.url).toString("hex");
-    const command = [
-      "sui client call",
-      `--package ${packageId}`,
-      "--module nft_collection",
-      "--function mint_nft",
-      "--args",
-      `"${params.collectionCap}"`,
-      // CollectionCap object ID
-      `"${params.collectionId}"`,
-      // Collection object ID
-      `"0x${nameHex}"`,
-      // NFT name as hex
-      `"0x${descriptionHex}"`,
-      // NFT description as hex
-      `"0x${urlHex}"`,
-      // NFT URL as hex
-      "--gas-budget 100000000",
-      "--json"
-    ].join(" ");
-    console.log("Executing mint command:", command);
-    const output = execSync(command, {
-      encoding: "utf8"
-    });
-    const result = JSON.parse(output);
-    console.log("Mint result:", JSON.stringify(result, null, 2));
-    const txId = result.digest;
-    const objectChanges = result.objectChanges || [];
-    const nftObject = objectChanges.find(
-      (obj) => obj.type === "created" && obj.objectType?.includes("::nft_collection::NFT")
-    );
-    if (!nftObject) {
-      return {
-        success: false,
-        error: "Could not find NFT object in transaction output",
-        transactionId: txId
-      };
-    }
-    return {
-      success: true,
-      transactionId: txId,
-      nftId: nftObject.objectId
-    };
-  } catch (error) {
-    console.error("Error minting NFT:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
-}
-async function createCollection(params) {
-  try {
-    const nameHex = Buffer.from(params.name).toString("hex");
-    const symbolHex = Buffer.from(params.symbol).toString("hex");
-    const descriptionHex = Buffer.from(params.description || "").toString(
-      "hex"
-    );
-    const command = [
-      "sui client call",
-      `--package ${params.packageId}`,
-      "--module nft_collection",
-      "--function create_collection",
-      "--args",
-      `"0x${nameHex}"`,
-      `"0x${symbolHex}"`,
-      `"0x${descriptionHex}"`,
-      `"${params.maxSupply}"`,
-      "--gas-budget 100000000",
-      "--json"
-    ].join(" ");
-    console.log("Executing create collection command:", command);
-    const output = execSync(command, {
-      encoding: "utf8"
-    });
-    const result = JSON.parse(output);
-    const objectChanges = result.objectChanges || [];
-    const collectionObject = objectChanges.find(
-      (obj) => obj.objectType?.includes("::nft_collection::Collection")
-    );
-    const collectionCapObject = objectChanges.find(
-      (obj) => obj.objectType?.includes("::nft_collection::CollectionCap")
-    );
-    if (!collectionObject || !collectionCapObject) {
-      return {
-        success: false,
-        error: "Failed to find Collection or CollectionCap objects",
-        output: result
-      };
-    }
-    const collectionId = collectionObject.objectId;
-    const collectionCap = collectionCapObject.objectId;
-    if (!collectionId || !collectionCap) {
-      return {
-        success: false,
-        error: "Failed to extract collection ID or capability",
-        output: result
-      };
-    }
-    return {
-      success: true,
-      collectionId,
-      collectionCap,
-      output: result
-    };
-  } catch (error) {
-    console.error("Error creating collection:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error)
-    };
-  }
-}
-
-// src/plugin/nftPlugin/actions/mintNft.ts
-function isMintNFTContent(content) {
-  return typeof content.collectionId === "string" && typeof content.collectionCap === "string" && typeof content.packageId === "string";
-}
-var MintNFTAction = class {
-  constructor(runtime) {
-    this.runtime = runtime;
-    if (!runtime.getSetting("SUI_PRIVATE_KEY")) {
-      throw new Error("Sui private key not found");
-    }
-    this.suiClient = new SuiClient4({
-      url: getFullnodeUrl4("testnet")
-    });
-  }
-  suiClient;
-  async mintNFT(content, tokenId) {
-    if (!isMintNFTContent(content)) {
-      throw new Error("Invalid content for MINT_NFT action");
-    }
-    const result = await mintNFT(content.packageId, {
-      collectionId: content.collectionId,
-      collectionCap: content.collectionCap,
-      name: `${content.name || "NFT"} #${tokenId}`,
-      description: content.description || `NFT #${tokenId}`,
-      url: content.imageUrl || ""
-    });
-    if (!result.success || !result.nftId) {
-      throw new Error(result.error || "Failed to mint NFT");
-    }
-    return {
-      nftId: result.nftId,
-      transactionId: result.transactionId
-    };
-  }
-};
-var mintNFTAction = {
-  name: "MINT_NFT",
-  similes: [
-    "NFT_MINTING",
-    "NFT_CREATION",
-    "CREATE_NFT",
-    "GENERATE_NFT",
-    "MINT_TOKEN",
-    "CREATE_TOKEN",
-    "MAKE_NFT",
-    "TOKEN_GENERATION"
-  ],
-  description: "Mint NFTs for the collection on Sui",
-  validate: async (runtime, _message) => {
-    return !!runtime.getSetting("SUI_PRIVATE_KEY");
-  },
-  handler: async (runtime, message, state, _options, callback) => {
-    try {
-      if (runtime.getSetting("SUI_NETWORK") !== "testnet") {
-        throw new Error("NFT minting is only supported on Sui testnet");
-      }
-      elizaLogger7.log("Composing state for message:", message);
-      let currentState;
-      if (!state) {
-        currentState = await runtime.composeState(message);
-      } else {
-        currentState = await runtime.updateRecentMessageState(state);
-      }
-      const context = composeContext3({
-        state: currentState,
-        template: mintNFTTemplate
-      });
-      const res = await generateObject3({
-        runtime,
-        context,
-        modelClass: ModelClass4.LARGE,
-        schema: MintNFTSchema
-      });
-      const content = res.object;
-      elizaLogger7.log("Generate Object:", content);
-      const action = new MintNFTAction(runtime);
-      const tokenId = Math.floor(Math.random() * 1e6);
-      const result = await action.mintNFT(content, tokenId);
-      if (callback) {
-        callback({
-          text: `NFT minted successfully! \u{1F389}
-NFT ID: ${result.nftId}
-View on Explorer: https://suiexplorer.com/object/${result.nftId}?network=testnet`,
-          attachments: []
-        });
-      }
-      return true;
-    } catch (e) {
-      elizaLogger7.error("Error minting NFT:", e);
-      throw e;
-    }
-  },
-  examples: [
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "mint nft for collection: 0x1234... on Sui"
-        }
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "I've minted a new NFT in your specified collection on Sui.",
-          action: "MINT_NFT"
-        }
-      }
-    ]
-  ]
-};
-var mintNft_default = mintNFTAction;
-
-// src/plugin/nftPlugin/actions/nftCollectionGeneration.ts
-import {
-  composeContext as composeContext4,
-  elizaLogger as elizaLogger8,
-  generateObject as generateObject4,
-  ModelClass as ModelClass5
-} from "@elizaos/core";
-import { SuiClient as SuiClient5, getFullnodeUrl as getFullnodeUrl5 } from "@mysten/sui/client";
-var NFTCollectionAction = class {
-  constructor(runtime) {
-    this.runtime = runtime;
-    this.suiClient = new SuiClient5({
-      url: getFullnodeUrl5("testnet")
-    });
-  }
-  suiClient;
-  async generateCollection(name2, description) {
-    const contractName = name2.toLowerCase().replace(/[^a-zA-Z0-9]/g, "_");
-    const symbol = name2.slice(0, 5).toUpperCase();
-    const maxSupply = 5e3;
-    const contractConfig = {
-      packageName: contractName,
-      name: name2,
-      symbol,
-      description,
-      maxSupply
-    };
-    const { packagePath } = await generateMoveContract(contractConfig);
-    const compileResult = await compileMoveContract(packagePath);
-    if (!compileResult.compiled) {
-      throw new Error(`Contract compilation failed: ${compileResult.error}`);
-    }
-    elizaLogger8.log("Contract compiled successfully");
-    const publishResult = await publishMoveContract(packagePath);
-    if (!publishResult.success || !publishResult.packageId) {
-      throw new Error(`Contract deployment failed: ${publishResult.error}`);
-    }
-    elizaLogger8.log(
-      `Contract published with package ID: ${publishResult.packageId}`
-    );
-    const createCollectionResult = await createCollection({
-      packageId: publishResult.packageId,
-      name: name2,
-      symbol,
-      description,
-      maxSupply
-    });
-    if (!createCollectionResult.success) {
-      throw new Error(
-        `Collection creation failed: ${createCollectionResult.error}`
-      );
-    }
-    return {
-      packageId: publishResult.packageId,
-      collectionId: createCollectionResult.collectionId,
-      collectionCap: createCollectionResult.collectionCap
-    };
-  }
-};
-var nftCollectionGeneration = {
-  name: "GENERATE_COLLECTION",
-  similes: [
-    "COLLECTION_GENERATION",
-    "COLLECTION_GEN",
-    "CREATE_COLLECTION",
-    "MAKE_COLLECTION",
-    "GENERATE_COLLECTION"
-  ],
-  description: "Generate an NFT collection on Sui",
-  validate: async (runtime, _message) => {
-    return !!runtime.getSetting("SUI_PRIVATE_KEY");
-  },
-  handler: async (runtime, message, _state, _options, callback) => {
-    try {
-      if (runtime.getSetting("SUI_NETWORK") !== "testnet") {
-        throw new Error(
-          "Collection generation is only supported on Sui testnet"
-        );
-      }
-      elizaLogger8.log("Composing state for message:", message);
-      const state = await runtime.composeState(message);
-      const context = composeContext4({
-        state,
-        template: createCollectionTemplate
-      });
-      const res = await generateObject4({
-        runtime,
-        context,
-        modelClass: ModelClass5.LARGE,
-        schema: CreateCollectionSchema
-      });
-      const content = res.object;
-      const action = new NFTCollectionAction(runtime);
-      const result = await action.generateCollection(
-        content.name,
-        content.description
-      );
-      if (callback) {
-        callback({
-          text: `Collection created successfully! \u{1F389}
-Package ID: ${result.packageId}
-Collection ID: ${result.collectionId}
-Collection Cap: ${result.collectionCap}
-View on Explorer: https://suiexplorer.com/object/${result.collectionId}?network=testnet`,
-          attachments: []
-        });
-      }
-      return [];
-    } catch (e) {
-      elizaLogger8.error("Error generating collection:", e);
-      throw e;
-    }
-  },
-  examples: [
-    [
-      {
-        user: "{{user1}}",
-        content: { text: "Generate a collection on Sui" }
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "Here's your new NFT collection on Sui.",
-          action: "GENERATE_COLLECTION"
-        }
-      }
-    ]
-  ]
-};
-var nftCollectionGeneration_default = nftCollectionGeneration;
-
-// src/plugin/nftPlugin/providers/wallet.ts
-import {
-  elizaLogger as elizaLogger9
-} from "@elizaos/core";
-import { getFullnodeUrl as getFullnodeUrl6, SuiClient as SuiClient6 } from "@mysten/sui/client";
-import { MIST_PER_SUI as MIST_PER_SUI2 } from "@mysten/sui/utils";
-import BigNumber2 from "bignumber.js";
-import NodeCache2 from "node-cache";
-import * as path4 from "path";
-
-// src/plugin/nftPlugin/utils/utils.ts
-import { Ed25519Keypair as Ed25519Keypair2 } from "@mysten/sui/keypairs/ed25519";
-import { Secp256k1Keypair as Secp256k1Keypair2 } from "@mysten/sui/keypairs/secp256k1";
-import { Secp256r1Keypair as Secp256r1Keypair2 } from "@mysten/sui/keypairs/secp256r1";
-var parseAccount2 = (runtime) => {
-  const privateKey = runtime.getSetting("SUI_PRIVATE_KEY");
-  if (!privateKey) {
-    throw new Error("SUI_PRIVATE_KEY is not set");
-  }
-  if (privateKey.startsWith("suiprivkey")) {
-    return loadFromSecretKey2(privateKey);
-  }
-  return loadFromMnemonics2(privateKey);
-};
-var loadFromSecretKey2 = (privateKey) => {
-  const keypairClasses = [Ed25519Keypair2, Secp256k1Keypair2, Secp256r1Keypair2];
-  for (const KeypairClass of keypairClasses) {
-    try {
-      return KeypairClass.fromSecretKey(privateKey);
-    } catch {
-    }
-  }
-  throw new Error("Failed to initialize keypair from secret key");
-};
-var loadFromMnemonics2 = (mnemonics) => {
-  const keypairMethods = [
-    { Class: Ed25519Keypair2, method: "deriveKeypairFromSeed" },
-    { Class: Secp256k1Keypair2, method: "deriveKeypair" },
-    { Class: Secp256r1Keypair2, method: "deriveKeypair" }
-  ];
-  for (const { Class, method } of keypairMethods) {
-    try {
-      return Class[method](mnemonics);
-    } catch {
-    }
-  }
-  throw new Error("Failed to derive keypair from mnemonics");
-};
-
-// src/plugin/nftPlugin/providers/wallet.ts
-import axios2 from "axios";
-var PROVIDER_CONFIG2 = {
-  MAX_RETRIES: 3,
-  RETRY_DELAY: 2e3
-};
-var cacheTimeSeconds2 = 30;
-var WalletProvider2 = class {
-  constructor(suiClient, address, cacheManager) {
-    this.suiClient = suiClient;
-    this.address = address;
-    this.cacheManager = cacheManager;
-    this.cache = new NodeCache2({ stdTTL: cacheTimeSeconds2 });
-  }
-  cache;
-  cacheKey = "sui/wallet";
-  async readFromCache(key) {
-    const cached = await this.cacheManager.get(
-      path4.join(this.cacheKey, key)
-    );
-    return cached;
-  }
-  async writeToCache(key, data) {
-    await this.cacheManager.set(path4.join(this.cacheKey, key), data, {
-      expires: Date.now() + cacheTimeSeconds2 * 1e3
-    });
-  }
-  async getCachedData(key) {
-    const cachedData = this.cache.get(key);
-    if (cachedData) {
-      return cachedData;
-    }
-    const fileCachedData = await this.readFromCache(key);
-    if (fileCachedData) {
-      this.cache.set(key, fileCachedData);
-      return fileCachedData;
-    }
-    return null;
-  }
-  async setCachedData(cacheKey, data) {
-    this.cache.set(cacheKey, data);
-    await this.writeToCache(cacheKey, data);
-  }
-  async fetchPricesWithRetry() {
-    let lastError;
-    for (let i = 0; i < PROVIDER_CONFIG2.MAX_RETRIES; i++) {
-      try {
-        const cetusSuiUsdcPoolAddr = "0x51e883ba7c0b566a26cbc8a94cd33eb0abd418a77cc1e60ad22fd9b1f29cd2ab";
-        const url = `https://api.dexscreener.com/latest/dex/pairs/sui/${cetusSuiUsdcPoolAddr}`;
-        elizaLogger9.info(`Fetching SUI price from ${url}`);
-        const response = await axios2.get(url);
-        return response.data;
-      } catch (error) {
-        console.error(`Attempt ${i + 1} failed:`, error);
-        lastError = error;
-        if (i < PROVIDER_CONFIG2.MAX_RETRIES - 1) {
-          const delay = PROVIDER_CONFIG2.RETRY_DELAY * Math.pow(2, i);
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          continue;
-        }
-      }
-    }
-    console.error("All attempts failed. Throwing the last error:", lastError);
-    throw lastError;
-  }
-  async fetchPortfolioValue() {
-    try {
-      const cacheKey = `portfolio-${this.address}`;
-      const cachedValue = await this.getCachedData(cacheKey);
-      if (cachedValue) {
-        console.log("Cache hit for fetchPortfolioValue", cachedValue);
-        return cachedValue;
-      }
-      console.log("Cache miss for fetchPortfolioValue");
-      const prices = await this.fetchPrices().catch((error) => {
-        console.error("Error fetching SUI price:", error);
-        throw error;
-      });
-      const suiAmountOnChain = await this.suiClient.getBalance({
-        owner: this.address
-      }).catch((error) => {
-        console.error("Error fetching SUI amount:", error);
-        throw error;
-      });
-      const suiAmount = Number.parseInt(suiAmountOnChain.totalBalance) / Number(MIST_PER_SUI2);
-      const totalUsd = new BigNumber2(suiAmount).times(prices.sui.usd);
-      const portfolio = {
-        totalUsd: totalUsd.toString(),
-        totalSui: suiAmount.toString()
-      };
-      this.setCachedData(cacheKey, portfolio);
-      console.log("Fetched portfolio:", portfolio);
-      return portfolio;
-    } catch (error) {
-      console.error("Error fetching portfolio:", error);
-      throw error;
-    }
-  }
-  async fetchPrices() {
-    try {
-      const cacheKey = "prices";
-      const cachedValue = await this.getCachedData(cacheKey);
-      if (cachedValue) {
-        console.log("Cache hit for fetchPrices");
-        return cachedValue;
-      }
-      console.log("Cache miss for fetchPrices");
-      const suiPriceData = await this.fetchPricesWithRetry().catch((error) => {
-        console.error("Error fetching SUI price:", error);
-        throw error;
-      });
-      const prices = {
-        sui: { usd: (1 / suiPriceData.pair.priceNative).toString() }
-      };
-      this.setCachedData(cacheKey, prices);
-      return prices;
-    } catch (error) {
-      console.error("Error fetching prices:", error);
-      throw error;
-    }
-  }
-  formatPortfolio(runtime, portfolio) {
-    let output = `${runtime.character.name}
-`;
-    output += `Wallet Address: ${this.address}
-`;
-    const totalUsdFormatted = new BigNumber2(portfolio.totalUsd).toFixed(2);
-    const totalSuiFormatted = new BigNumber2(portfolio.totalSui).toFixed(4);
-    output += `Total Value: $${totalUsdFormatted} (${totalSuiFormatted} SUI)
-`;
-    return output;
-  }
-  async getFormattedPortfolio(runtime) {
-    try {
-      const portfolio = await this.fetchPortfolioValue();
-      return this.formatPortfolio(runtime, portfolio);
-    } catch (error) {
-      console.error("Error generating portfolio report:", error);
-      return "Unable to fetch wallet information. Please try again later.";
-    }
-  }
-};
-var walletProvider2 = {
-  get: async (runtime, _message, _state) => {
-    const suiAccount = parseAccount2(runtime);
-    try {
-      const suiClient = new SuiClient6({
-        url: getFullnodeUrl6(runtime.getSetting("SUI_NETWORK"))
-      });
-      const provider = new WalletProvider2(
-        suiClient,
-        suiAccount.toSuiAddress(),
-        runtime.cacheManager
-      );
-      return await provider.getFormattedPortfolio(runtime);
-    } catch (error) {
-      console.error("Error in wallet provider:", error);
-      return null;
-    }
-  }
-};
-
-// src/plugin/nftPlugin/src/index.ts
-var nftPlugin = {
-  name: "nft",
-  description: "NFT plugin",
-  providers: [walletProvider2],
-  evaluators: [],
-  services: [],
-  actions: [nftCollectionGeneration_default, mintNft_default]
-};
-var src_default = nftPlugin;
-
-// src/characters/influencer.ts
 var INFLUENCER_AGENT_ID = "e4bd91e4-33a0-4e2c-92f0-cf468e90a130";
 var influencer = {
   ...defaultCharacter2,
@@ -2215,7 +810,7 @@ var influencer = {
   clients: [],
   modelProvider: ModelProviderName2.OPENROUTER,
   imageModelProvider: ModelProviderName2.TOGETHER,
-  plugins: [imageGenerationPlugin, bootstrapPlugin2, suiPlugin_default, src_default],
+  plugins: [imageGenerationPlugin, bootstrapPlugin2, initiaPlugin],
   settings: {
     voice: {
       model: "en_US-male-medium"
@@ -2327,7 +922,7 @@ var producer = {
   clients: [],
   modelProvider: ModelProviderName3.OPENROUTER,
   imageModelProvider: ModelProviderName3.TOGETHER,
-  plugins: [imageGenerationPlugin, bootstrapPlugin3, suiPlugin_default],
+  plugins: [imageGenerationPlugin, bootstrapPlugin3, initiaPlugin],
   settings: {
     voice: {
       model: "en_US-male-medium"
@@ -2479,7 +1074,7 @@ var generateCharacter = (agentConfig) => {
     modelProvider: agentConfig.model,
     id: agentConfig.id,
     name: agentConfig.name,
-    clients: agentConfig.role === "producer" ? [] : [Clients4.TWITTER],
+    clients: [Clients4.TELEGRAM],
     settings: {
       secrets: {
         SUI_NETWORK: "testnet",
@@ -2496,7 +1091,7 @@ var generateCharacter = (agentConfig) => {
 
 // src/utils/dialogue-system.ts
 import { ObjectId } from "mongodb";
-import { composeContext as composeContext5, generateText as generateText2, ModelClass as ModelClass6 } from "@elizaos/core";
+import { composeContext as composeContext2, generateText as generateText2, ModelClass as ModelClass3 } from "@elizaos/core";
 import EventEmitter from "node:events";
 var NOT_FOUND = "Request not found";
 var eventEmitter = new EventEmitter();
@@ -2633,7 +1228,7 @@ var createContextForLLM = async (prompt, userId, agentRuntime, template, additio
     content: { text: prompt }
   };
   const state = await agentRuntime.composeState(message, additionalKeys);
-  return composeContext5({
+  return composeContext2({
     state,
     template
   });
@@ -2665,7 +1260,7 @@ var sendInteractionToProducer = async (interactionId, organizationId, content) =
   const respondFromProducer = await generateText2({
     runtime: producerAgent,
     context: producerContext,
-    modelClass: ModelClass6.LARGE
+    modelClass: ModelClass3.LARGE
   });
   console.log(`Respond from producer: ${respondFromProducer}`);
   const extractedRequests = extractRequestForAgent(respondFromProducer);
@@ -2704,9 +1299,9 @@ var sendRequestToAgent = async (interactionId, fromAgentId, toAgentId, content) 
   const respondFromProducer = await generateText2({
     runtime: targetAgent,
     context,
-    modelClass: ModelClass6.LARGE
+    modelClass: ModelClass3.LARGE
   });
-  console.log("Resonse from agent", respondFromProducer);
+  console.log("Response from agent", respondFromProducer);
   const extractedRequests = extractRequestForAgent(respondFromProducer);
   for (const request of extractedRequests) {
     eventEmitter.emit(
@@ -2746,10 +1341,10 @@ import {
   generateShouldRespond,
   shouldRespondFooter,
   parseBooleanFromText,
-  ModelClass as ModelClass7,
-  ServiceType as ServiceType4,
-  composeContext as composeContext6,
-  elizaLogger as elizaLogger11,
+  ModelClass as ModelClass4,
+  ServiceType,
+  composeContext as composeContext3,
+  elizaLogger as elizaLogger5,
   getEmbeddingZeroVector,
   stringToUuid,
   generateMessageResponse,
@@ -2761,9 +1356,9 @@ import {
   Scraper,
   SearchMode
 } from "agent-twitter-client";
-import fs3 from "fs";
-import path5 from "path";
-import { z as z5 } from "zod";
+import fs2 from "fs";
+import path2 from "path";
+import { z as z2 } from "zod";
 import { EventEmitter as EventEmitter2 } from "events";
 var RequestQueue = class {
   queue = [];
@@ -3010,7 +1605,7 @@ var ClientBase = class _ClientBase extends EventEmitter2 {
     }
   }
   async populateTimeline() {
-    elizaLogger11.debug("populating timeline...");
+    elizaLogger5.debug("populating timeline...");
     const cachedTimeline = await this.getCachedTimeline();
     if (cachedTimeline) {
       const existingMemories2 = await this.runtime.messageManager.getMemoriesByRoomIds({
@@ -3038,7 +1633,7 @@ var ClientBase = class _ClientBase extends EventEmitter2 {
           processingTweets: tweetsToSave2.map((tweet) => tweet.id).join(",")
         });
         for (const tweet of tweetsToSave2) {
-          elizaLogger11.log("Saving Tweet", tweet.id);
+          elizaLogger5.log("Saving Tweet", tweet.id);
           const roomId = stringToUuid(
             tweet.conversationId + "-" + this.runtime.agentId
           );
@@ -3068,12 +1663,12 @@ var ClientBase = class _ClientBase extends EventEmitter2 {
               tweet.inReplyToStatusId + "-" + this.runtime.agentId
             ) : void 0
           };
-          elizaLogger11.log("Creating memory for tweet", tweet.id);
+          elizaLogger5.log("Creating memory for tweet", tweet.id);
           const memory = await this.runtime.messageManager.getMemoryById(
             stringToUuid(tweet.id + "-" + this.runtime.agentId)
           );
           if (memory) {
-            elizaLogger11.log(
+            elizaLogger5.log(
               "Memory already exists, skipping timeline population"
             );
             break;
@@ -3089,7 +1684,7 @@ var ClientBase = class _ClientBase extends EventEmitter2 {
           });
           await this.cacheTweet(tweet);
         }
-        elizaLogger11.log(
+        elizaLogger5.log(
           `Populated ${tweetsToSave2.length} missing tweets from the cache.`
         );
         return;
@@ -3122,7 +1717,7 @@ var ClientBase = class _ClientBase extends EventEmitter2 {
         stringToUuid(tweet.id + "-" + this.runtime.agentId)
       )
     );
-    elizaLogger11.debug({
+    elizaLogger5.debug({
       processingTweets: tweetsToSave.map((tweet) => tweet.id).join(",")
     });
     await this.runtime.ensureUserExists(
@@ -3132,7 +1727,7 @@ var ClientBase = class _ClientBase extends EventEmitter2 {
       "twitter"
     );
     for (const tweet of tweetsToSave) {
-      elizaLogger11.log("Saving Tweet", tweet.id);
+      elizaLogger5.log("Saving Tweet", tweet.id);
       const roomId = stringToUuid(
         tweet.conversationId + "-" + this.runtime.agentId
       );
@@ -3190,7 +1785,7 @@ var ClientBase = class _ClientBase extends EventEmitter2 {
         }
       );
       if (recentMessage.length > 0 && recentMessage[0].content === message.content) {
-        elizaLogger11.debug("Message already saved", recentMessage[0].id);
+        elizaLogger5.debug("Message already saved", recentMessage[0].id);
       } else {
         await this.runtime.messageManager.createMemory({
           ...message,
@@ -3283,18 +1878,18 @@ var ClientBase = class _ClientBase extends EventEmitter2 {
   }
 };
 var DEFAULT_MAX_TWEET_LENGTH = 280;
-var twitterUsernameSchema = z5.string().min(1).max(15).regex(/^[A-Za-z][A-Za-z0-9_]*[A-Za-z0-9]$|^[A-Za-z]$/, "Invalid Twitter username format");
-var twitterEnvSchema = z5.object({
-  TWITTER_DRY_RUN: z5.boolean(),
-  TWITTER_USERNAME: z5.string().min(1, "Twitter username is required"),
-  TWITTER_PASSWORD: z5.string().min(1, "Twitter password is required"),
-  TWITTER_EMAIL: z5.string().email("Valid Twitter email is required"),
-  MAX_TWEET_LENGTH: z5.number().int().default(DEFAULT_MAX_TWEET_LENGTH),
-  TWITTER_SEARCH_ENABLE: z5.boolean().default(false),
-  TWITTER_2FA_SECRET: z5.string(),
-  TWITTER_RETRY_LIMIT: z5.number().int(),
-  TWITTER_POLL_INTERVAL: z5.number().int(),
-  TWITTER_TARGET_USERS: z5.array(twitterUsernameSchema).default([]),
+var twitterUsernameSchema = z2.string().min(1).max(15).regex(/^[A-Za-z][A-Za-z0-9_]*[A-Za-z0-9]$|^[A-Za-z]$/, "Invalid Twitter username format");
+var twitterEnvSchema = z2.object({
+  TWITTER_DRY_RUN: z2.boolean(),
+  TWITTER_USERNAME: z2.string().min(1, "Twitter username is required"),
+  TWITTER_PASSWORD: z2.string().min(1, "Twitter password is required"),
+  TWITTER_EMAIL: z2.string().email("Valid Twitter email is required"),
+  MAX_TWEET_LENGTH: z2.number().int().default(DEFAULT_MAX_TWEET_LENGTH),
+  TWITTER_SEARCH_ENABLE: z2.boolean().default(false),
+  TWITTER_2FA_SECRET: z2.string(),
+  TWITTER_RETRY_LIMIT: z2.number().int(),
+  TWITTER_POLL_INTERVAL: z2.number().int(),
+  TWITTER_TARGET_USERS: z2.array(twitterUsernameSchema).default([]),
   // I guess it's possible to do the transformation with zod
   // not sure it's preferable, maybe a readability issue
   // since more people will know js/ts than zod
@@ -3323,11 +1918,11 @@ var twitterEnvSchema = z5.object({
       .optional()
       .default(''),
   */
-  POST_INTERVAL_MIN: z5.number().int(),
-  POST_INTERVAL_MAX: z5.number().int(),
-  ENABLE_ACTION_PROCESSING: z5.boolean(),
-  ACTION_INTERVAL: z5.number().int(),
-  POST_IMMEDIATELY: z5.boolean()
+  POST_INTERVAL_MIN: z2.number().int(),
+  POST_INTERVAL_MAX: z2.number().int(),
+  ENABLE_ACTION_PROCESSING: z2.boolean(),
+  ACTION_INTERVAL: z2.number().int(),
+  POST_IMMEDIATELY: z2.boolean()
 });
 function parseTargetUsers(targetUsersStr) {
   if (!targetUsersStr?.trim()) {
@@ -3427,7 +2022,7 @@ async function validateTwitterConfig(runtime) {
     };
     return twitterEnvSchema.parse(twitterConfig);
   } catch (error) {
-    if (error instanceof z5.ZodError) {
+    if (error instanceof z2.ZodError) {
       const errorMessages = error.errors.map((err) => `${err.path.join(".")}: ${err.message}`).join("\n");
       throw new Error(
         `Twitter configuration validation failed:
@@ -3521,7 +2116,7 @@ var TwitterInteractionClient = class {
     handleTwitterInteractionsLoop();
   }
   async handleTwitterInteractions() {
-    elizaLogger11.log("Checking Twitter interactions");
+    elizaLogger5.log("Checking Twitter interactions");
     const twitterUsername = this.client.profile.username;
     try {
       const mentionCandidates = (await this.client.fetchSearchTweets(
@@ -3529,14 +2124,14 @@ var TwitterInteractionClient = class {
         20,
         SearchMode.Latest
       )).tweets;
-      elizaLogger11.log(
+      elizaLogger5.log(
         "Completed checking mentioned tweets:",
         mentionCandidates.length
       );
       let uniqueTweetCandidates = [...mentionCandidates];
       if (this.client.twitterConfig.TWITTER_TARGET_USERS.length) {
         const TARGET_USERS = this.client.twitterConfig.TWITTER_TARGET_USERS;
-        elizaLogger11.log("Processing target users:", TARGET_USERS);
+        elizaLogger5.log("Processing target users:", TARGET_USERS);
         if (TARGET_USERS.length > 0) {
           const tweetsByUser = /* @__PURE__ */ new Map();
           for (const username of TARGET_USERS) {
@@ -3549,7 +2144,7 @@ var TwitterInteractionClient = class {
               const validTweets = userTweets.filter((tweet) => {
                 const isUnprocessed = !this.client.lastCheckedTweetId || parseInt(tweet.id) > this.client.lastCheckedTweetId;
                 const isRecent = Date.now() - tweet.timestamp * 1e3 < 2 * 60 * 60 * 1e3;
-                elizaLogger11.log(`Tweet ${tweet.id} checks:`, {
+                elizaLogger5.log(`Tweet ${tweet.id} checks:`, {
                   isUnprocessed,
                   isRecent,
                   isReply: tweet.isReply,
@@ -3559,12 +2154,12 @@ var TwitterInteractionClient = class {
               });
               if (validTweets.length > 0) {
                 tweetsByUser.set(username, validTweets);
-                elizaLogger11.log(
+                elizaLogger5.log(
                   `Found ${validTweets.length} valid tweets from ${username}`
                 );
               }
             } catch (error) {
-              elizaLogger11.error(
+              elizaLogger5.error(
                 `Error fetching tweets for ${username}:`,
                 error
               );
@@ -3576,7 +2171,7 @@ var TwitterInteractionClient = class {
             if (tweets.length > 0) {
               const randomTweet = tweets[Math.floor(Math.random() * tweets.length)];
               selectedTweets.push(randomTweet);
-              elizaLogger11.log(
+              elizaLogger5.log(
                 `Selected tweet from ${username}: ${randomTweet.text?.substring(0, 100)}`
               );
             }
@@ -3587,7 +2182,7 @@ var TwitterInteractionClient = class {
           ];
         }
       } else {
-        elizaLogger11.log(
+        elizaLogger5.log(
           "No target users configured, processing only mentions"
         );
       }
@@ -3601,12 +2196,12 @@ var TwitterInteractionClient = class {
             tweetId
           );
           if (existingResponse) {
-            elizaLogger11.log(
+            elizaLogger5.log(
               `Already responded to tweet ${tweet.id}, skipping`
             );
             continue;
           }
-          elizaLogger11.log("New Tweet found", tweet.permanentUrl);
+          elizaLogger5.log("New Tweet found", tweet.permanentUrl);
           const roomId = stringToUuid(
             tweet.conversationId + "-" + this.runtime.agentId
           );
@@ -3637,9 +2232,9 @@ var TwitterInteractionClient = class {
         }
       }
       await this.client.cacheLatestCheckedTweetId();
-      elizaLogger11.log("Finished checking Twitter interactions");
+      elizaLogger5.log("Finished checking Twitter interactions");
     } catch (error) {
-      elizaLogger11.error("Error handling Twitter interactions:", error);
+      elizaLogger5.error("Error handling Twitter interactions:", error);
     }
   }
   async handleTweet({
@@ -3651,17 +2246,17 @@ var TwitterInteractionClient = class {
       return;
     }
     if (!message.content.text) {
-      elizaLogger11.log("Skipping Tweet with no text", tweet.id);
+      elizaLogger5.log("Skipping Tweet with no text", tweet.id);
       return { text: "", action: "IGNORE" };
     }
-    elizaLogger11.log("Processing Tweet: ", tweet.id);
+    elizaLogger5.log("Processing Tweet: ", tweet.id);
     const formatTweet = (tweet2) => {
       return `  ID: ${tweet2.id}
   From: ${tweet2.name} (@${tweet2.username})
   Text: ${tweet2.text} photos: ${tweet2.photos}`;
     };
     const currentPost = formatTweet(tweet);
-    elizaLogger11.debug("Thread: ", thread);
+    elizaLogger5.debug("Thread: ", thread);
     const formattedConversation = thread.map(
       (tweet2) => `@${tweet2.username} (${new Date(
         tweet2.timestamp * 1e3
@@ -3673,7 +2268,7 @@ var TwitterInteractionClient = class {
       })}):
         ${tweet2.text}`
     ).join("\n\n");
-    elizaLogger11.debug("formattedConversation: ", formattedConversation);
+    elizaLogger5.debug("formattedConversation: ", formattedConversation);
     let state = await this.runtime.composeState(message, {
       twitterClient: this.client.twitterClient,
       twitterUserName: this.client.twitterConfig.TWITTER_USERNAME,
@@ -3683,7 +2278,7 @@ var TwitterInteractionClient = class {
     const tweetId = stringToUuid(tweet.id + "-" + this.runtime.agentId);
     const tweetExists = await this.runtime.messageManager.getMemoryById(tweetId);
     if (!tweetExists) {
-      elizaLogger11.log("tweet does not exist, saving");
+      elizaLogger5.log("tweet does not exist, saving");
       const userIdUUID = stringToUuid(tweet.userId);
       const roomId = stringToUuid(tweet.conversationId);
       const message2 = {
@@ -3705,28 +2300,28 @@ var TwitterInteractionClient = class {
       this.client.saveRequestMessage(message2, state);
     }
     const validTargetUsersStr = this.client.twitterConfig.TWITTER_TARGET_USERS.join(",");
-    const shouldRespondContext = composeContext6({
+    const shouldRespondContext = composeContext3({
       state,
       template: this.runtime.character.templates?.twitterShouldRespondTemplate || this.runtime.character?.templates?.shouldRespondTemplate || twitterShouldRespondTemplate(validTargetUsersStr)
     });
     const shouldRespond = await generateShouldRespond({
       runtime: this.runtime,
       context: shouldRespondContext,
-      modelClass: ModelClass7.MEDIUM
+      modelClass: ModelClass4.MEDIUM
     });
     if (shouldRespond !== "RESPOND") {
-      elizaLogger11.log("Not responding to message");
+      elizaLogger5.log("Not responding to message");
       return { text: "Response Decision:", action: shouldRespond };
     }
-    const context = composeContext6({
+    const context = composeContext3({
       state,
       template: this.runtime.character.templates?.twitterMessageHandlerTemplate || this.runtime.character?.templates?.messageHandlerTemplate || twitterMessageHandlerTemplate
     });
-    elizaLogger11.debug("Interactions prompt:\n" + context);
+    elizaLogger5.debug("Interactions prompt:\n" + context);
     const response = await generateMessageResponse({
       runtime: this.runtime,
       context,
-      modelClass: ModelClass7.LARGE
+      modelClass: ModelClass4.LARGE
     });
     const removeQuotes = (str) => str.replace(/^['"](.*)['"]$/, "$1");
     const stringId = stringToUuid(tweet.id + "-" + this.runtime.agentId);
@@ -3777,7 +2372,7 @@ ${response.text} + ${response.attachments[0]}`;
         );
         await wait();
       } catch (error) {
-        elizaLogger11.error(`Error sending response tweet: ${error}`);
+        elizaLogger5.error(`Error sending response tweet: ${error}`);
       }
     }
   }
@@ -3785,17 +2380,17 @@ ${response.text} + ${response.attachments[0]}`;
     const thread = [];
     const visited = /* @__PURE__ */ new Set();
     async function processThread(currentTweet, depth = 0) {
-      elizaLogger11.log("Processing tweet:", {
+      elizaLogger5.log("Processing tweet:", {
         id: currentTweet.id,
         inReplyToStatusId: currentTweet.inReplyToStatusId,
         depth
       });
       if (!currentTweet) {
-        elizaLogger11.log("No current tweet found for thread building");
+        elizaLogger5.log("No current tweet found for thread building");
         return;
       }
       if (depth >= maxReplies) {
-        elizaLogger11.log("Reached maximum reply depth", depth);
+        elizaLogger5.log("Reached maximum reply depth", depth);
         return;
       }
       const memory = await this.runtime.messageManager.getMemoryById(
@@ -3833,18 +2428,18 @@ ${response.text} + ${response.attachments[0]}`;
         });
       }
       if (visited.has(currentTweet.id)) {
-        elizaLogger11.log("Already visited tweet:", currentTweet.id);
+        elizaLogger5.log("Already visited tweet:", currentTweet.id);
         return;
       }
       visited.add(currentTweet.id);
       thread.unshift(currentTweet);
-      elizaLogger11.debug("Current thread state:", {
+      elizaLogger5.debug("Current thread state:", {
         length: thread.length,
         currentDepth: depth,
         tweetId: currentTweet.id
       });
       if (currentTweet.inReplyToStatusId) {
-        elizaLogger11.log(
+        elizaLogger5.log(
           "Fetching parent tweet:",
           currentTweet.inReplyToStatusId
         );
@@ -3853,32 +2448,32 @@ ${response.text} + ${response.attachments[0]}`;
             currentTweet.inReplyToStatusId
           );
           if (parentTweet) {
-            elizaLogger11.log("Found parent tweet:", {
+            elizaLogger5.log("Found parent tweet:", {
               id: parentTweet.id,
               text: parentTweet.text?.slice(0, 50)
             });
             await processThread(parentTweet, depth + 1);
           } else {
-            elizaLogger11.log(
+            elizaLogger5.log(
               "No parent tweet found for:",
               currentTweet.inReplyToStatusId
             );
           }
         } catch (error) {
-          elizaLogger11.log("Error fetching parent tweet:", {
+          elizaLogger5.log("Error fetching parent tweet:", {
             tweetId: currentTweet.inReplyToStatusId,
             error
           });
         }
       } else {
-        elizaLogger11.log(
+        elizaLogger5.log(
           "Reached end of reply chain at:",
           currentTweet.id
         );
       }
     }
     await processThread.bind(this)(tweet, 0);
-    elizaLogger11.debug("Final thread built:", {
+    elizaLogger5.debug("Final thread built:", {
       totalTweets: thread.length,
       tweetIds: thread.map((t) => ({
         id: t.id,
@@ -4007,24 +2602,24 @@ var TwitterPostClient = class {
     }
     if (!this.isDryRun) {
       generateNewTweetLoop();
-      elizaLogger11.log("Tweet generation loop started");
+      elizaLogger5.log("Tweet generation loop started");
     } else {
-      elizaLogger11.log("Tweet generation loop disabled (dry run mode)");
+      elizaLogger5.log("Tweet generation loop disabled (dry run mode)");
     }
     if (this.client.twitterConfig.ENABLE_ACTION_PROCESSING && !this.isDryRun) {
       processActionsLoop().catch((error) => {
-        elizaLogger11.error(
+        elizaLogger5.error(
           "Fatal error in process actions loop:",
           error
         );
       });
     } else {
       if (this.isDryRun) {
-        elizaLogger11.log(
+        elizaLogger5.log(
           "Action processing loop disabled (dry run mode)"
         );
       } else {
-        elizaLogger11.log(
+        elizaLogger5.log(
           "Action processing loop disabled by configuration"
         );
       }
@@ -4059,7 +2654,7 @@ var TwitterPostClient = class {
       }
     );
     await client.cacheTweet(tweet);
-    elizaLogger11.log(`Tweet posted:
+    elizaLogger5.log(`Tweet posted:
  ${tweet.permanentUrl}`);
     await runtime.ensureRoomExists(roomId);
     await runtime.ensureParticipantInRoom(runtime.agentId, roomId);
@@ -4170,7 +2765,7 @@ Write a prompt. Only include the prompt and nothing else.`;
       const imagePrompt = await generateText3({
         runtime: this.runtime,
         context: IMAGE_PROMPT_INPUT,
-        modelClass: ModelClass7.MEDIUM,
+        modelClass: ModelClass4.MEDIUM,
         customSystemPrompt: IMAGE_SYSTEM_PROMPT
       });
       const data = {
@@ -4183,15 +2778,15 @@ Write a prompt. Only include the prompt and nothing else.`;
       };
       return await generateImage2(data, this.runtime);
     } catch (e) {
-      elizaLogger11.error("ERROR WHILE GENERATION IMAGE");
+      elizaLogger5.error("ERROR WHILE GENERATION IMAGE");
     }
   }
   async sendStandardTweet(client, content, tweetId) {
     try {
       const imageUsageKey = `twitter/${client.profile.username}/imageUsage`;
-      elizaLogger11.log("imageUsageKey", imageUsageKey);
+      elizaLogger5.log("imageUsageKey", imageUsageKey);
       const imageUsage = await client.runtime.cacheManager.get(imageUsageKey) || { count: 0 };
-      elizaLogger11.log("IMAGEUSAGE", imageUsage);
+      elizaLogger5.log("IMAGEUSAGE", imageUsage);
       let mediaFiles = [];
       if (imageUsage.count < 2) {
         const imgBufferData = await this.generateImgforPost(content);
@@ -4202,7 +2797,7 @@ Write a prompt. Only include the prompt and nothing else.`;
         const imgBuffer = imgBufferData.data[0];
         const filepath = imgBuffer.startsWith("http") ? await saveHeuristImage(imgBuffer, filename) : await saveBase64Image(imgBuffer, filename);
         mediaFiles.push({
-          data: fs3.readFileSync(filepath),
+          data: fs2.readFileSync(filepath),
           mediaType: "image/png"
         });
         await this.runtime.cacheManager.set(imageUsageKey, {
@@ -4215,7 +2810,7 @@ Write a prompt. Only include the prompt and nothing else.`;
         try {
           return await client.twitterClient.sendTweet(content, tweetId, mediaFiles);
         } catch (e) {
-          elizaLogger11.error("Error sending tweet:", e);
+          elizaLogger5.error("Error sending tweet:", e);
           throw e;
         }
       });
@@ -4235,7 +2830,7 @@ Write a prompt. Only include the prompt and nothing else.`;
   }
   async postTweet(runtime, client, cleanedContent, roomId, newTweetContent, twitterUsername) {
     try {
-      elizaLogger11.log(`Posting new tweet:
+      elizaLogger5.log(`Posting new tweet:
 `);
       let result;
       if (cleanedContent.length > DEFAULT_MAX_TWEET_LENGTH) {
@@ -4260,14 +2855,14 @@ Write a prompt. Only include the prompt and nothing else.`;
         newTweetContent
       );
     } catch (error) {
-      elizaLogger11.error("Error sending tweet:", error);
+      elizaLogger5.error("Error sending tweet:", error);
     }
   }
   /**
    * Generates and posts a new tweet. If isDryRun is true, only logs what would have been posted.
    */
   async generateNewTweet() {
-    elizaLogger11.log("Generating new tweet");
+    elizaLogger5.log("Generating new tweet");
     try {
       const roomId = stringToUuid(
         "twitter_generate_room-" + this.client.profile.username
@@ -4293,15 +2888,15 @@ Write a prompt. Only include the prompt and nothing else.`;
           twitterUserName: this.client.profile.username
         }
       );
-      const context = composeContext6({
+      const context = composeContext3({
         state,
         template: this.runtime.character.templates?.twitterPostTemplate || twitterPostTemplate
       });
-      elizaLogger11.debug("generate post prompt:\n" + context);
+      elizaLogger5.debug("generate post prompt:\n" + context);
       const newTweetContent = await generateText3({
         runtime: this.runtime,
         context,
-        modelClass: ModelClass7.SMALL
+        modelClass: ModelClass4.SMALL
       });
       let cleanedContent = "";
       try {
@@ -4316,7 +2911,7 @@ Write a prompt. Only include the prompt and nothing else.`;
         cleanedContent = newTweetContent.replace(/^\s*{?\s*"text":\s*"|"\s*}?\s*$/g, "").replace(/^['"](.*)['"]$/g, "$1").replace(/\\"/g, '"').replace(/\\n/g, "\n").trim();
       }
       if (!cleanedContent) {
-        elizaLogger11.error(
+        elizaLogger5.error(
           "Failed to extract valid content from response:",
           {
             rawResponse: newTweetContent,
@@ -4336,13 +2931,13 @@ Write a prompt. Only include the prompt and nothing else.`;
       const fixNewLines = (str) => str.replaceAll(/\\n/g, "\n");
       cleanedContent = removeQuotes(fixNewLines(cleanedContent));
       if (this.isDryRun) {
-        elizaLogger11.info(
+        elizaLogger5.info(
           `Dry run: would have posted tweet: ${cleanedContent}`
         );
         return;
       }
       try {
-        elizaLogger11.log(`Posting new tweet:
+        elizaLogger5.log(`Posting new tweet:
  ${cleanedContent}`);
         this.postTweet(
           this.runtime,
@@ -4353,25 +2948,25 @@ Write a prompt. Only include the prompt and nothing else.`;
           this.twitterUsername
         );
       } catch (error) {
-        elizaLogger11.error("Error sending tweet:", error);
+        elizaLogger5.error("Error sending tweet:", error);
       }
     } catch (error) {
-      elizaLogger11.error(error);
-      elizaLogger11.error("Error generating new tweet:", error);
+      elizaLogger5.error(error);
+      elizaLogger5.error("Error generating new tweet:", error);
     }
   }
   //
   async generateTweetContent(tweetState, options) {
-    const context = composeContext6({
+    const context = composeContext3({
       state: tweetState,
       template: options?.template || this.runtime.character.templates?.twitterPostTemplate || twitterPostTemplate
     });
     const response = await generateText3({
       runtime: this.runtime,
       context: options?.context || context,
-      modelClass: ModelClass7.SMALL
+      modelClass: ModelClass4.SMALL
     });
-    elizaLogger11.debug("generate tweet content response:\n" + response);
+    elizaLogger5.debug("generate tweet content response:\n" + response);
     const cleanedResponse = response.replace(/```json\s*/g, "").replace(/```\s*/g, "").replaceAll(/\\n/g, "\n").trim();
     try {
       const jsonResponse = JSON.parse(cleanedResponse);
@@ -4386,7 +2981,7 @@ Write a prompt. Only include the prompt and nothing else.`;
       }
     } catch (error) {
       error.linted = true;
-      elizaLogger11.debug("Response is not JSON, treating as plain text");
+      elizaLogger5.debug("Response is not JSON, treating as plain text");
     }
     return this.trimTweetLength(cleanedResponse);
   }
@@ -4405,15 +3000,15 @@ Write a prompt. Only include the prompt and nothing else.`;
    */
   async processTweetActions() {
     if (this.isProcessing) {
-      elizaLogger11.log("Already processing tweet actions, skipping");
+      elizaLogger5.log("Already processing tweet actions, skipping");
       return null;
     }
     try {
       this.isProcessing = true;
       this.lastProcessTime = Date.now();
-      elizaLogger11.log("Processing tweet actions");
+      elizaLogger5.log("Processing tweet actions");
       if (this.isDryRun) {
-        elizaLogger11.log("Dry run mode: simulating tweet actions");
+        elizaLogger5.log("Dry run mode: simulating tweet actions");
         return [];
       }
       await this.runtime.ensureUserExists(
@@ -4430,7 +3025,7 @@ Write a prompt. Only include the prompt and nothing else.`;
             stringToUuid(tweet.id + "-" + this.runtime.agentId)
           );
           if (memory) {
-            elizaLogger11.log(
+            elizaLogger5.log(
               `Already processed tweet ID: ${tweet.id}`
             );
             continue;
@@ -4452,17 +3047,17 @@ From: ${tweet.name} (@${tweet.username})
 Text: ${tweet.text}`
             }
           );
-          const actionContext = composeContext6({
+          const actionContext = composeContext3({
             state: tweetState,
             template: this.runtime.character.templates?.twitterActionTemplate || twitterActionTemplate
           });
           const actionResponse = await generateTweetActions({
             runtime: this.runtime,
             context: actionContext,
-            modelClass: ModelClass7.SMALL
+            modelClass: ModelClass4.SMALL
           });
           if (!actionResponse) {
-            elizaLogger11.log(
+            elizaLogger5.log(
               `No valid actions generated for tweet ${tweet.id}`
             );
             continue;
@@ -4471,7 +3066,7 @@ Text: ${tweet.text}`
           if (actionResponse.like) {
             try {
               if (this.isDryRun) {
-                elizaLogger11.info(
+                elizaLogger5.info(
                   `Dry run: would have liked tweet ${tweet.id}`
                 );
                 executedActions.push("like (dry run)");
@@ -4480,10 +3075,10 @@ Text: ${tweet.text}`
                   tweet.id
                 );
                 executedActions.push("like");
-                elizaLogger11.log(`Liked tweet ${tweet.id}`);
+                elizaLogger5.log(`Liked tweet ${tweet.id}`);
               }
             } catch (error) {
-              elizaLogger11.error(
+              elizaLogger5.error(
                 `Error liking tweet ${tweet.id}:`,
                 error
               );
@@ -4492,7 +3087,7 @@ Text: ${tweet.text}`
           if (actionResponse.retweet) {
             try {
               if (this.isDryRun) {
-                elizaLogger11.info(
+                elizaLogger5.info(
                   `Dry run: would have retweeted tweet ${tweet.id}`
                 );
                 executedActions.push("retweet (dry run)");
@@ -4501,10 +3096,10 @@ Text: ${tweet.text}`
                   tweet.id
                 );
                 executedActions.push("retweet");
-                elizaLogger11.log(`Retweeted tweet ${tweet.id}`);
+                elizaLogger5.log(`Retweeted tweet ${tweet.id}`);
               }
             } catch (error) {
-              elizaLogger11.error(
+              elizaLogger5.error(
                 `Error retweeting tweet ${tweet.id}:`,
                 error
               );
@@ -4513,7 +3108,7 @@ Text: ${tweet.text}`
           if (actionResponse.quote) {
             try {
               if (this.isDryRun) {
-                elizaLogger11.info(
+                elizaLogger5.info(
                   `Dry run: would have posted quote tweet for ${tweet.id}`
                 );
                 executedActions.push("quote (dry run)");
@@ -4528,12 +3123,12 @@ Text: ${tweet.text}`
               ).join("\n\n");
               const imageDescriptions = [];
               if (tweet.photos?.length > 0) {
-                elizaLogger11.log(
+                elizaLogger5.log(
                   "Processing images in tweet for context"
                 );
                 for (const photo of tweet.photos) {
                   const description = await this.runtime.getService(
-                    ServiceType4.IMAGE_DESCRIPTION
+                    ServiceType.IMAGE_DESCRIPTION
                   ).describeImage(photo.url);
                   imageDescriptions.push(description);
                 }
@@ -4550,7 +3145,7 @@ Quoted Tweet from @${quotedTweet.username}:
 ${quotedTweet.text}`;
                   }
                 } catch (error) {
-                  elizaLogger11.error(
+                  elizaLogger5.error(
                     "Error fetching quoted tweet:",
                     error
                   );
@@ -4582,12 +3177,12 @@ ${imageDescriptions.map((desc, i) => `Image ${i + 1}: ${desc}`).join("\n")}` : "
                 template: this.runtime.character.templates?.twitterMessageHandlerTemplate || twitterMessageHandlerTemplate
               });
               if (!quoteContent) {
-                elizaLogger11.error(
+                elizaLogger5.error(
                   "Failed to generate valid quote tweet content"
                 );
                 return;
               }
-              elizaLogger11.log(
+              elizaLogger5.log(
                 "Generated quote tweet content:",
                 quoteContent
               );
@@ -4599,7 +3194,7 @@ ${imageDescriptions.map((desc, i) => `Image ${i + 1}: ${desc}`).join("\n")}` : "
               );
               const body = await result.json();
               if (body?.data?.create_tweet?.tweet_results?.result) {
-                elizaLogger11.log(
+                elizaLogger5.log(
                   "Successfully posted quote tweet"
                 );
                 executedActions.push("quote");
@@ -4612,13 +3207,13 @@ Generated Quote:
 ${quoteContent}`
                 );
               } else {
-                elizaLogger11.error(
+                elizaLogger5.error(
                   "Quote tweet creation failed:",
                   body
                 );
               }
             } catch (error) {
-              elizaLogger11.error(
+              elizaLogger5.error(
                 "Error in quote tweet generation:",
                 error
               );
@@ -4632,7 +3227,7 @@ ${quoteContent}`
                 executedActions
               );
             } catch (error) {
-              elizaLogger11.error(
+              elizaLogger5.error(
                 `Error replying to tweet ${tweet.id}:`,
                 error
               );
@@ -4669,7 +3264,7 @@ ${quoteContent}`
             executedActions
           });
         } catch (error) {
-          elizaLogger11.error(
+          elizaLogger5.error(
             `Error processing tweet ${tweet.id}:`,
             error
           );
@@ -4678,7 +3273,7 @@ ${quoteContent}`
       }
       return results;
     } catch (error) {
-      elizaLogger11.error("Error in processTweetActions:", error);
+      elizaLogger5.error("Error in processTweetActions:", error);
       throw error;
     } finally {
       this.isProcessing = false;
@@ -4696,10 +3291,10 @@ ${quoteContent}`
       ).join("\n\n");
       const imageDescriptions = [];
       if (tweet.photos?.length > 0) {
-        elizaLogger11.log("Processing images in tweet for context");
+        elizaLogger5.log("Processing images in tweet for context");
         for (const photo of tweet.photos) {
           const description = await this.runtime.getService(
-            ServiceType4.IMAGE_DESCRIPTION
+            ServiceType.IMAGE_DESCRIPTION
           ).describeImage(photo.url);
           imageDescriptions.push(description);
         }
@@ -4716,7 +3311,7 @@ Quoted Tweet from @${quotedTweet.username}:
 ${quotedTweet.text}`;
           }
         } catch (error) {
-          elizaLogger11.error("Error fetching quoted tweet:", error);
+          elizaLogger5.error("Error fetching quoted tweet:", error);
         }
       }
       const enrichedState = await this.runtime.composeState(
@@ -4742,17 +3337,17 @@ ${imageDescriptions.map((desc, i) => `Image ${i + 1}: ${desc}`).join("\n")}` : "
         template: this.runtime.character.templates?.twitterMessageHandlerTemplate || twitterMessageHandlerTemplate
       });
       if (!replyText) {
-        elizaLogger11.error("Failed to generate valid reply content");
+        elizaLogger5.error("Failed to generate valid reply content");
         return;
       }
       if (this.isDryRun) {
-        elizaLogger11.info(
+        elizaLogger5.info(
           `Dry run: reply to tweet ${tweet.id} would have been: ${replyText}`
         );
         executedActions.push("reply (dry run)");
         return;
       }
-      elizaLogger11.debug("Final reply text to be sent:", replyText);
+      elizaLogger5.debug("Final reply text to be sent:", replyText);
       let result;
       if (replyText.length > DEFAULT_MAX_TWEET_LENGTH) {
         result = await this.handleNoteTweet(
@@ -4769,7 +3364,7 @@ ${imageDescriptions.map((desc, i) => `Image ${i + 1}: ${desc}`).join("\n")}` : "
         );
       }
       if (result) {
-        elizaLogger11.log("Successfully posted reply tweet");
+        elizaLogger5.log("Successfully posted reply tweet");
         executedActions.push("reply");
         await this.runtime.cacheManager.set(
           `twitter/reply_generation_${tweet.id}.txt`,
@@ -4780,10 +3375,10 @@ Generated Reply:
 ${replyText}`
         );
       } else {
-        elizaLogger11.error("Tweet reply creation failed");
+        elizaLogger5.error("Tweet reply creation failed");
       }
     } catch (error) {
-      elizaLogger11.error("Error in handleTextOnlyReply:", error);
+      elizaLogger5.error("Error in handleTextOnlyReply:", error);
     }
   }
   async stop() {
@@ -4831,7 +3426,7 @@ var TwitterSearchClient = class {
   engageWithSearchTermsLoop() {
     this.engageWithSearchTerms().then();
     const randomMinutes = Math.floor(Math.random() * (120 - 60 + 1)) + 60;
-    elizaLogger11.log(`Next twitter search scheduled in ${randomMinutes} minutes`);
+    elizaLogger5.log(`Next twitter search scheduled in ${randomMinutes} minutes`);
     setTimeout(
       () => this.engageWithSearchTermsLoop(),
       randomMinutes * 60 * 1e3
@@ -4895,7 +3490,7 @@ Text: ${tweet.text}
       const mostInterestingTweetResponse = await generateText3({
         runtime: this.runtime,
         context: prompt,
-        modelClass: ModelClass7.SMALL
+        modelClass: ModelClass4.SMALL
       });
       const tweetId = mostInterestingTweetResponse.trim();
       const selectedTweet = slicedTweets.find(
@@ -4953,7 +3548,7 @@ Text: ${tweet.text}
       const imageDescriptions = [];
       for (const photo of selectedTweet.photos) {
         const description = await this.runtime.getService(
-          ServiceType4.IMAGE_DESCRIPTION
+          ServiceType.IMAGE_DESCRIPTION
         ).describeImage(photo.url);
         imageDescriptions.push(description);
       }
@@ -4976,14 +3571,14 @@ Images in Post (Described): ${imageDescriptions.join(", ")}
   `
       });
       await this.client.saveRequestMessage(message, state);
-      const context = composeContext6({
+      const context = composeContext3({
         state,
         template: this.runtime.character.templates?.twitterSearchTemplate || twitterSearchTemplate
       });
       const responseContent = await generateMessageResponse({
         runtime: this.runtime,
         context,
-        modelClass: ModelClass7.LARGE
+        modelClass: ModelClass4.LARGE
       });
       responseContent.inReplyTo = message.id;
       const response = responseContent;
@@ -5050,17 +3645,17 @@ async function buildConversationThread(tweet, client, maxReplies = 10) {
   const thread = [];
   const visited = /* @__PURE__ */ new Set();
   async function processThread(currentTweet, depth = 0) {
-    elizaLogger11.debug("Processing tweet:", {
+    elizaLogger5.debug("Processing tweet:", {
       id: currentTweet.id,
       inReplyToStatusId: currentTweet.inReplyToStatusId,
       depth
     });
     if (!currentTweet) {
-      elizaLogger11.debug("No current tweet found for thread building");
+      elizaLogger5.debug("No current tweet found for thread building");
       return;
     }
     if (depth >= maxReplies) {
-      elizaLogger11.debug("Reached maximum reply depth", depth);
+      elizaLogger5.debug("Reached maximum reply depth", depth);
       return;
     }
     const memory = await client.runtime.messageManager.getMemoryById(
@@ -5098,18 +3693,18 @@ async function buildConversationThread(tweet, client, maxReplies = 10) {
       });
     }
     if (visited.has(currentTweet.id)) {
-      elizaLogger11.debug("Already visited tweet:", currentTweet.id);
+      elizaLogger5.debug("Already visited tweet:", currentTweet.id);
       return;
     }
     visited.add(currentTweet.id);
     thread.unshift(currentTweet);
-    elizaLogger11.debug("Current thread state:", {
+    elizaLogger5.debug("Current thread state:", {
       length: thread.length,
       currentDepth: depth,
       tweetId: currentTweet.id
     });
     if (currentTweet.inReplyToStatusId) {
-      elizaLogger11.debug(
+      elizaLogger5.debug(
         "Fetching parent tweet:",
         currentTweet.inReplyToStatusId
       );
@@ -5118,32 +3713,32 @@ async function buildConversationThread(tweet, client, maxReplies = 10) {
           currentTweet.inReplyToStatusId
         );
         if (parentTweet) {
-          elizaLogger11.debug("Found parent tweet:", {
+          elizaLogger5.debug("Found parent tweet:", {
             id: parentTweet.id,
             text: parentTweet.text?.slice(0, 50)
           });
           await processThread(parentTweet, depth + 1);
         } else {
-          elizaLogger11.debug(
+          elizaLogger5.debug(
             "No parent tweet found for:",
             currentTweet.inReplyToStatusId
           );
         }
       } catch (error) {
-        elizaLogger11.error("Error fetching parent tweet:", {
+        elizaLogger5.error("Error fetching parent tweet:", {
           tweetId: currentTweet.inReplyToStatusId,
           error
         });
       }
     } else {
-      elizaLogger11.debug(
+      elizaLogger5.debug(
         "Reached end of reply chain at:",
         currentTweet.id
       );
     }
   }
   await processThread(tweet, 0);
-  elizaLogger11.debug("Final thread built:", {
+  elizaLogger5.debug("Final thread built:", {
     totalTweets: thread.length,
     tweetIds: thread.map((t) => ({
       id: t.id,
@@ -5175,9 +3770,9 @@ async function sendTweet(client, content, roomId, twitterUsername, inReplyTo) {
             );
             const mediaType = attachment.contentType;
             return { data: mediaBuffer, mediaType };
-          } else if (fs3.existsSync(attachment.url)) {
-            const mediaBuffer = await fs3.promises.readFile(
-              path5.resolve(attachment.url)
+          } else if (fs2.existsSync(attachment.url)) {
+            const mediaBuffer = await fs2.promises.readFile(
+              path2.resolve(attachment.url)
             );
             const mediaType = attachment.contentType;
             return { data: mediaBuffer, mediaType };
@@ -5213,7 +3808,7 @@ async function sendTweet(client, content, roomId, twitterUsername, inReplyTo) {
       sentTweets.push(finalTweet);
       previousTweetId = finalTweet.id;
     } else {
-      elizaLogger11.error("Error sending tweet chunk:", { chunk, response: body });
+      elizaLogger5.error("Error sending tweet chunk:", { chunk, response: body });
     }
     await wait(1e3, 2e3);
   }
@@ -5318,11 +3913,11 @@ var TwitterManager = class {
     this.client = new ClientBase(runtime, twitterConfig);
     this.post = new TwitterPostClient(this.client, runtime);
     if (twitterConfig.TWITTER_SEARCH_ENABLE) {
-      elizaLogger11.warn("Twitter/X client running in a mode that:");
-      elizaLogger11.warn("1. violates consent of random users");
-      elizaLogger11.warn("2. burns your rate limit");
-      elizaLogger11.warn("3. can get your account banned");
-      elizaLogger11.warn("use at your own risk");
+      elizaLogger5.warn("Twitter/X client running in a mode that:");
+      elizaLogger5.warn("1. violates consent of random users");
+      elizaLogger5.warn("2. burns your rate limit");
+      elizaLogger5.warn("3. can get your account banned");
+      elizaLogger5.warn("use at your own risk");
       this.search = new TwitterSearchClient(this.client, runtime);
     }
     this.interaction = new TwitterInteractionClient(this.client, runtime);
@@ -5347,8 +3942,8 @@ var client_twitter_default = TwitterClientInterface;
 // src/index.ts
 var expressApp = express();
 configDotenv();
-var __filename = fileURLToPath2(import.meta.url);
-var __dirname = path6.dirname(__filename);
+var __filename = fileURLToPath(import.meta.url);
+var __dirname = path3.dirname(__filename);
 var wait2 = (minTime = 1e3, maxTime = 3e3) => {
   const waitTime = Math.floor(Math.random() * (maxTime - minTime + 1)) + minTime;
   return new Promise((resolve) => setTimeout(resolve, waitTime));
@@ -5380,6 +3975,7 @@ function initializeDatabaseClient() {
 async function initializeClients(character, runtime) {
   const clients = [];
   const clientTypes = character.clients?.map((str) => str.toLowerCase()) || [];
+  console.log("ClientTypes", clientTypes);
   if (clientTypes.includes("auto")) {
     const autoClient = await AutoClientInterface.start(runtime);
     if (autoClient) {
@@ -5413,8 +4009,8 @@ async function initializeClients(character, runtime) {
 }
 var nodePlugin;
 function createAgent(character, db, cache, token) {
-  elizaLogger12.success(
-    elizaLogger12.successesTitle,
+  elizaLogger6.success(
+    elizaLogger6.successesTitle,
     "Creating runtime for character",
     character.name
   );
@@ -5443,7 +4039,7 @@ async function startAgent(character, database) {
     const cookies = runtime.getSetting("TWITTER_COOKIES");
     const username = runtime.getSetting("TWITTER_USERNAME");
     if (cookies) {
-      elizaLogger12.log(`Reading cookies from SETTINGS...`);
+      elizaLogger6.log(`Reading cookies from SETTINGS...`);
       await runtime.cacheManager.set(
         `twitter/${username}/cookies`,
         JSON.parse(cookies)
@@ -5451,7 +4047,7 @@ async function startAgent(character, database) {
     }
     return initializeClients(character, runtime);
   } catch (error) {
-    elizaLogger12.error(
+    elizaLogger6.error(
       `Error starting agent for character ${character.name}:`,
       error
     );
@@ -5463,9 +4059,9 @@ var killAgent = async (agentId) => {
     const agent = agentsManager.getAgent(agentId);
     await agent.stop();
     agentsManager.removeAgent(agentId);
-    elizaLogger12.success(`Agent stopped: ${agentId}`);
+    elizaLogger6.success(`Agent stopped: ${agentId}`);
   } catch (error) {
-    elizaLogger12.error(`Failed to stop agent: ${agentId}`);
+    elizaLogger6.error(`Failed to stop agent: ${agentId}`);
   }
 };
 var verifySecretKey = (secretKey) => {
@@ -5530,9 +4126,9 @@ var initializeExpressApp = (elizaMongodbAdapter) => {
   });
 };
 var initializeAgentsSystem = async () => {
-  const dataDir = path6.join(__dirname, "../data");
-  if (!fs4.existsSync(dataDir)) {
-    fs4.mkdirSync(dataDir, { recursive: true });
+  const dataDir = path3.join(__dirname, "../data");
+  if (!fs3.existsSync(dataDir)) {
+    fs3.mkdirSync(dataDir, { recursive: true });
   }
   const databaseClient = initializeDatabaseClient();
   const databaseName = process.env.MONGODB_NAME || "ai-office";
@@ -5544,26 +4140,28 @@ var initializeAgentsSystem = async () => {
   const database = databaseClient.db(databaseName);
   initializeExpressApp(elizaMongodbAdapter);
   subscribeToAgentConversation(database);
-  const agentConfigurations = await database.collection("agents").find({}).toArray();
-  for (const agentConfiguration of agentConfigurations) {
-    const character = generateCharacter({
-      id: agentConfiguration._id.toString(),
-      name: agentConfiguration.name,
-      role: agentConfiguration.role,
-      teamId: agentConfiguration.team.toString(),
-      walletAddress: agentConfiguration.walletAddress,
-      encryptedPrivateKey: agentConfiguration.encryptedPrivateKey,
-      organizationId: agentConfiguration.organization.toString(),
-      description: agentConfiguration.description,
-      model: agentConfiguration.model,
-      modelApiKey: agentConfiguration.modelApiKey,
-      config: agentConfiguration.config
-    });
-    await startAgent(character, elizaMongodbAdapter);
-  }
+  const agentConfigurations = [];
+  const character = generateCharacter({
+    id: "67a8b86ae6a0ff45bbe30754",
+    name: "Producer Agent",
+    role: "producer",
+    teamId: "67a8b8f53e0100dd9a843b6a",
+    organizationId: "67a8b8eab638d6c1a206417a",
+    walletAddress: "",
+    encryptedPrivateKey: "",
+    description: "test",
+    model: "openrouter",
+    modelApiKey: "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",
+    config: {
+      "twitterUsername": "NameF62514",
+      "twitterPassword": "66N60S79ccVk",
+      "twitterEmail": "jogec91962@pofmagic.com"
+    }
+  });
+  await startAgent(character, elizaMongodbAdapter);
 };
 initializeAgentsSystem().catch((error) => {
-  elizaLogger12.error("Unhandled error in startAgents:", error);
+  elizaLogger6.error("Unhandled error in startAgents:", error);
   if (error instanceof Error) {
     console.error(error.stack);
   }

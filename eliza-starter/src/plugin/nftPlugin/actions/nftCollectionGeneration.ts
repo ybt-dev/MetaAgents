@@ -11,25 +11,15 @@ import {
 } from "@elizaos/core";
 import { CreateCollectionSchema } from "../types/index.ts";
 import { createCollectionTemplate } from "../templates/index.ts";
-import * as initia from "@initia/initia.js";
 import { z } from "zod";
 import { createCollection } from "../utils/generateMoveContractCode.ts";
 
-const { LCDClient } = initia;
 
 export class NFTCollectionAction {
-  private lcd: InstanceType<typeof LCDClient>;
-
   constructor(private runtime: IAgentRuntime) {
     if (!runtime.getSetting("INITIA_MNEMONIC")) {
       throw new Error("Initia mnemonic not found");
     }
-    // Initialize Initia client with testnet
-    this.lcd = new LCDClient("https://lcd.initiation-2.initia.xyz", {
-      chainId: "initiation-2",
-      gasPrices: "0.15uinit",
-      gasAdjustment: "2.0",
-    });
   }
 
   async generateCollection(name: string, description: string) {
