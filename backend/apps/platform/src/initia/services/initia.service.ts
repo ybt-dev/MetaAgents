@@ -41,10 +41,21 @@ export interface CreateNftCollectionParams {
   royalty: number;
 }
 
+export interface MintNftParams {
+  encryptedPrivateKey: string;
+  destinationAddress: string;
+  collectionName: string;
+  description: string;
+  tokenId: string;
+  uri: string;
+  recipient: string;
+}
+
 export interface InitiaService {
   getWalletBalance(walletAddress: string): Promise<WalletBalance>;
   sendTx(params: SendTxParams): Promise<TransactionResult>;
   createNftCollection(params: CreateNftCollectionParams): Promise<TransactionResult>;
+  mintNft(params: MintNftParams): Promise<TransactionResult>;
 }
 
 @Injectable()
@@ -52,6 +63,7 @@ export class DefaultInitiaService implements InitiaService {
   private readonly INITIA_DENOM = 'uinit';
   private readonly NFT_MODULE_NAME = 'metaAgents_nft_module';
   private readonly NFT_MODULE_CREATE_COLLECTION_METHOD = 'create_collection';
+  private readonly NFT_MODULE_MINT_NFT_METHOD = 'mint_nft';
 
   private readonly WALLET_ENCRYPTION_SECRET_KEY: string;
 
@@ -99,6 +111,31 @@ export class DefaultInitiaService implements InitiaService {
         bcs.string().serialize(params.uri).toBase64(),
         bcs.u64().serialize(params.maxSupply).toBase64(),
         bcs.u64().serialize(params.royalty).toBase64(),
+      ],
+    );
+
+    const signedTx = await wallet.createAndSignTx({ msgs: [msg] });
+
+    const result = await this.client.tx.broadcast(signedTx);
+
+    return this.mapBroadcastResultToTransactionResult(result);
+  }
+
+  public async mintNft(params: MintNftParams) {
+    const wallet = this.getWalletFromPrivateKey(params.encryptedPrivateKey);
+
+    const msg = new MsgExecute(
+      wallet.key.accAddress,
+      params.destinationAddress,
+      this.NFT_MODULE_NAME,
+      this.NFT_MODULE_MINT_NFT_METHOD,
+      undefined,
+      [
+        bcs.string().serialize(params.collectionName).toBase64(),
+        bcs.string().serialize(params.description).toBase64(),
+        bcs.string().serialize(params.tokenId).toBase64(),
+        bcs.string().serialize(params.uri).toBase64(),
+        bcs.address().serialize(params.recipient).toBase64(),
       ],
     );
 

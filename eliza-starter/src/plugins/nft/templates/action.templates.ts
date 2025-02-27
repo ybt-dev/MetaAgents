@@ -30,3 +30,41 @@ export const generateNftCollectionImageTemplate = `Given the recent messages and
 
 Generate a logo with the text "{{collectionName}}".
 `;
+
+export const generateNftItemTemplate = `Given the recent messages and wallet information below:
+
+{{recentMessages}}
+
+{{providers}}
+
+Extract the following information about the NFT to be minted:
+- collectionName: The name of the collection to mint the NFT in.
+- description: A detailed description of the NFT.
+- tokenId: A unique identifier for the NFT (should be unique within the collection).
+- recipient: The wallet address that will receive the NFT.
+
+Respond with a JSON markdown block containing only the extracted values. All fields are required:
+
+\`\`\`json
+{
+    "collectionName": "COLLECTION_NAME",
+    "description": "NFT_DESCRIPTION",
+    "tokenId": "UNIQUE_TOKEN_ID",
+    "recipient": "RECIPIENT_ADDRESS"
+}
+\`\`\`
+
+Note: Ensure that the collection name exists and the recipient address is valid. The tokenId should be unique and descriptive.
+`;
+
+export const generateNftItemImageTemplate = `Given the recent messages and wallet information below:
+
+{{recentMessages}}
+
+Generate a unique and artistic NFT image based on the following details:
+Collection: {{collectionName}}
+Token ID: {{tokenId}}
+Description: {{description}}
+
+The image should be visually appealing and reflect the NFT's characteristics and theme.
+`;
