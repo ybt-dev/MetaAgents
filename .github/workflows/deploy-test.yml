@@ -52,7 +52,7 @@ jobs:
       LAUNCH_TYPE: FARGATE
       DOCKERFILE_PATH: ./eliza-starter/Dockerfile
       DOCKER_CONTEXT: ./eliza-starter
-      TASK_DEFINITION_PATH: ./.ecs/.ecs/eliza-definition.json
+      TASK_DEFINITION_PATH: ./.ecs/eliza-definition.json
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
