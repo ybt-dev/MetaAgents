@@ -20,4 +20,51 @@ export class InitiaController {
   sendTx(sender: string, recipient: string, amount: string, mnemonic: string, privateKey?: string) {
     return this.initiaService.sendTx(sender, recipient, amount, mnemonic, privateKey);
   }
+
+  @Post('nftInfo')
+  getNftInfo(nftId: string, moduleOwner: string) {
+    return this.initiaService.getNftInfo(nftId, moduleOwner);
+  }
+
+  @Post('mintNft')
+  mintNft(
+    mnemonic: string,
+    destinationAddress: string,
+    collectionName: string,
+    name: string,
+    description: string,
+    imageUrl: string,
+    walletAddress: string,
+  ) {
+    return this.initiaService.mintNft(
+      mnemonic,
+      destinationAddress,
+      collectionName,
+      name,
+      description,
+      imageUrl,
+      walletAddress,
+    );
+  }
+
+  @Post('create_collection')
+  createCollection(
+    mnemonic: string,
+    destinationAddress: string,
+    name: string,
+    description: string,
+    uri: string,
+    maxSupply: number,
+    royalty: number,
+  ) {
+    return this.initiaService.createCollection(
+      mnemonic,
+      destinationAddress,
+      name,
+      description,
+      uri,
+      maxSupply,
+      royalty,
+    );
+  }
 }
