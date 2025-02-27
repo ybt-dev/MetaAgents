@@ -12,6 +12,7 @@ import {
 import { mintNFTTemplate } from "../templates/index.ts";
 import { type MintNFTContent, MintNFTSchema } from "../types/index.ts";
 import { mintNFT } from "../utils/generateMoveContractCode.ts";
+import { createNFTMetadata } from "../handlers/createNFT.ts";
 
 function isMintNFTContent(content: any): content is MintNFTContent {
   return (
@@ -33,13 +34,24 @@ export class MintNFTAction {
       throw new Error("Invalid content for MINT_NFT action");
     }
 
+    // Generate and store NFT metadata in AWS S3
+    const nftMetadata = await createNFTMetadata({
+      runtime: this.runtime,
+      collectionName: content.collectionId as string,
+      tokenId,
+    });
+
+    if (!nftMetadata) {
+      throw new Error("Failed to generate NFT metadata");
+    }
+
     // Mint NFT using the Move contract
     const result = await mintNFT({
       mnemonic: this.runtime.getSetting("INITIA_MNEMONIC"),
       collectionName: content.collectionId as string,
-      name: `${content.name || "NFT"} #${tokenId}`,
-      description: content.description as string,
-      imageUrl: content.imageUrl as string,
+      name: nftMetadata.name,
+      description: nftMetadata.description,
+      imageUrl: nftMetadata.uri,
       wallet: this.runtime.getSetting("INITIA_WALLET_ADDRESS"),
     });
 
@@ -49,6 +61,7 @@ export class MintNFTAction {
 
     return {
       transactionId: result.transactionId,
+      metadata: nftMetadata,
     };
   }
 }
