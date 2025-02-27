@@ -42,6 +42,7 @@ const baseCharacterTemplate = (
     settings: {
       secrets: {
         [AgentSettingsKey.InitiaPrivateKey]: privateKey,
+        [AgentSettingsKey.InitiaEncryptedPrivateKey]: agentConfiguration.encryptedPrivateKey,
         [AgentSettingsKey.InitiaWalletAddress]: agentConfiguration.walletAddress,
         TWITTER_COOKIES: agentConfiguration.config.twitterCookie,
         TWITTER_USERNAME: agentConfiguration.config.twitterUsername,
