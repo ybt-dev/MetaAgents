@@ -35,6 +35,20 @@ jobs:
       LAUNCH_TYPE: FARGATE
       DOCKERFILE_PATH: ./backend/Dockerfile
       DOCKER_CONTEXT: ./backend
+      AWS_SECRETS_LIST: |
+        DATABASE_CONNECTION_URL
+        SESSIONS_SECRET
+        SESSION_TOKEN_EXPIRES_IN
+        APPLICATION_ORIGIN
+        COOKIE_DOMAIN
+        AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY
+        AWS_REGION
+        SNS_BASE_ARN
+        SQS_BASE_URL
+        REDIS_URL
+        PORT
+        WALLET_ENCRYPTION_SECRET_KEY
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
@@ -53,6 +67,18 @@ jobs:
       DOCKERFILE_PATH: ./eliza-starter/Dockerfile
       DOCKER_CONTEXT: ./eliza-starter
       TASK_DEFINITION_PATH: ./.ecs/eliza-definition.json
+      AWS_SECRETS_LIST: |
+        MONGODB_URL
+        MONGODB_NAME
+        INTERACTION_RESPONSE_TOPIC_ARN
+        AGENTS_COMMUNICATION_ARN
+        INTERACTIONS_QUEUE_URL
+        AGENTS_CONTROL_QUEUE_URL
+        AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY
+        AWS_REGION
+        WALLET_ENCRYPTION_SECRET_KEY
+        BACKEND_URL
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
