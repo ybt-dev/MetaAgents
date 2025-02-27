@@ -3,7 +3,11 @@ import { Session } from '@apps/platform/sessions/decorators';
 import { SessionData } from '@apps/platform/sessions/types';
 import { SessionGuard } from '@apps/platform/sessions/guards';
 import { AgentTeamInteractionService } from '@apps/platform/agents/services';
-import { CreateAgentTeamInteractionBodyDto, ListAgentTeamInteractionsQueryDto } from '@apps/platform/agents/dto';
+import {
+  CreateAgentTeamInteractionBodyDto,
+  ListAgentTeamInteractionsQueryDto,
+  SendReplyMessageToInteractionBodyDto,
+} from '@apps/platform/agents/dto';
 import { InjectAgentTeamInteractionService } from '@apps/platform/agents/decorators';
 
 @Controller('/agent-team-interactions')
@@ -30,6 +34,21 @@ export default class AgentTeamInteractionController {
       requestContent: body.requestContent,
       organizationId: session.organizationId,
       teamId: body.teamId,
+      createdById: session.userId,
+    });
+  }
+
+  @Post('/:id/reply')
+  public sendReplyMessage(
+    @Session() session: SessionData,
+    @Param('id') interactionId: string,
+    @Body() body: SendReplyMessageToInteractionBodyDto,
+  ) {
+    return this.agentTeamInteractionService.sendReplyMessage({
+      interactionId,
+      replyMessageId: body.replyMessageId,
+      organizationId: session.organizationId,
+      content: body.content,
       createdById: session.userId,
     });
   }

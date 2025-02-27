@@ -1,17 +1,16 @@
 import { IsString, IsNotEmpty } from 'class-validator';
 import { IsIdentifier } from '@libs/validation/class-validators';
-import { AgentTeamInteractionStatus } from '@apps/platform/agents/enums';
 
 export interface AgentTeamInteractionDto {
   id: string;
   title: string;
-  requestContent: string;
   teamId: string;
   organizationId: string;
-  status: AgentTeamInteractionStatus;
+  repliesQueue: string[];
   createdAt: Date;
   updatedAt: Date;
   createdById?: string | null;
+  additionalDataRequested?: boolean;
 }
 
 export class ListAgentTeamInteractionsQueryDto {
@@ -32,4 +31,14 @@ export class CreateAgentTeamInteractionBodyDto {
   @IsIdentifier()
   @IsNotEmpty()
   teamId: string;
+}
+
+export class SendReplyMessageToInteractionBodyDto {
+  @IsString()
+  @IsNotEmpty()
+  content: string;
+
+  @IsIdentifier()
+  @IsNotEmpty()
+  replyMessageId: string;
 }

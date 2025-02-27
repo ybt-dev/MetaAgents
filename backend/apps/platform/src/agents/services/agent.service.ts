@@ -1,6 +1,10 @@
-import { AES } from 'crypto-js';
+import { ConfigService } from '@nestjs/config';
 import { Ed25519Keypair } from '@mysten/sui/keypairs/ed25519';
 import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { InjectEncryptionHelper } from '@libs/encryption/decorators';
+import { EncryptionHelper } from '@libs/encryption/helpers';
+import { InjectEventsService } from '@libs/events/decorators';
+import { EventsService } from '@libs/events/services';
 import { InjectTransactionsManager } from '@libs/transactions/decorators';
 import { TransactionsManager } from '@libs/transactions/managers';
 import { AgentRepository, AgentTeamRepository } from '@apps/platform/agents/repositories';
@@ -8,12 +12,11 @@ import {
   InjectAgentRepository,
   InjectAgentEntityToDtoMapper,
   InjectAgentTeamRepository,
-  InjectElizaApi,
 } from '@apps/platform/agents/decorators';
 import { AgentDto } from '@apps/platform/agents/dto';
 import { AgentEntityToDtoMapper } from '@apps/platform/agents/entities-mappers';
 import { AgentModel, AgentRole } from '@apps/platform/agents/enums';
-import { ElizaApi } from '@apps/platform/agents/api';
+import { generateAgentCreatedEvent, generateAgentUpdatedEvent } from '@apps/platform/agents/utils';
 
 export interface CreateAgentParams {
   role: AgentRole;
@@ -52,13 +55,19 @@ export interface AgentService {
 
 @Injectable()
 export class DefaultAgentService implements AgentService {
+  private WALLET_ENCRYPTION_SECRET_KEY: string;
+
   constructor(
     @InjectAgentRepository() private readonly agentRepository: AgentRepository,
     @InjectAgentTeamRepository() private readonly agentTeamRepository: AgentTeamRepository,
     @InjectAgentEntityToDtoMapper() private agentEntityToDtoMapper: AgentEntityToDtoMapper,
-    @InjectElizaApi() private elizaApi: ElizaApi,
     @InjectTransactionsManager() private transactionsManager: TransactionsManager,
-  ) {}
+    @InjectEventsService() private readonly eventsService: EventsService,
+    @InjectEncryptionHelper() private readonly encryptionHelper: EncryptionHelper,
+    private readonly configService: ConfigService,
+  ) {
+    this.WALLET_ENCRYPTION_SECRET_KEY = this.configService.getOrThrow<string>('WALLET_ENCRYPTION_SECRET_KEY');
+  }
 
   public async listForTeam(teamId: string, organizationId: string, roles?: AgentRole[]) {
     const agentEntities = await this.agentRepository.findMany({
@@ -97,15 +106,9 @@ export class DefaultAgentService implements AgentService {
     const privateKey = Buffer.from(keypair.getSecretKey(), 'base64').toString('hex');
     const walletAddress = keypair.getPublicKey().toSuiAddress();
 
-    const encryptionKey = process.env.WALLET_ENCRYPTION_KEY;
+    const encryptedPrivateKey = this.encryptionHelper.encrypt(privateKey, this.WALLET_ENCRYPTION_SECRET_KEY);
 
-    if (!encryptionKey) {
-      throw new Error('WALLET_ENCRYPTION_KEY environment variable is not set');
-    }
-
-    const encryptedPrivateKey = AES.encrypt(privateKey, encryptionKey).toString();
-
-    const createdAgent = await this.transactionsManager.useTransaction(async () => {
+    return this.transactionsManager.useTransaction(async () => {
       const agentsWithSameRole = await this.agentRepository.exists({
         organizationId: params.organizationId,
         teamId: params.teamId,
@@ -137,23 +140,16 @@ export class DefaultAgentService implements AgentService {
         encryptedPrivateKey: encryptedPrivateKey,
       });
 
-      return this.agentEntityToDtoMapper.mapOne(agentEntity);
+      const agent = this.agentEntityToDtoMapper.mapOne(agentEntity);
+
+      await this.eventsService.create(generateAgentCreatedEvent(agent));
+
+      return agent;
     });
-
-    try {
-      await this.elizaApi.sendAgentsChange({
-        type: 'add',
-        agent: createdAgent,
-      });
-    } catch (error) {
-      console.error(error);
-    }
-
-    return createdAgent;
   }
 
   public async update(id: string, organizationId: string, params: UpdateAgentParams) {
-    const updatedAgent = await this.transactionsManager.useTransaction(async () => {
+    return this.transactionsManager.useTransaction(async () => {
       const existingAgent = await this.getIfExist(id, organizationId);
 
       const updatedAgentEntity = await this.agentRepository.updateOneById(id, {
@@ -174,17 +170,11 @@ export class DefaultAgentService implements AgentService {
         throw new NotFoundException('Agent not found.');
       }
 
-      return this.agentEntityToDtoMapper.mapOne(updatedAgentEntity);
-    });
-    try {
-      await this.elizaApi.sendAgentsChange({
-        type: 'update',
-        agent: updatedAgent,
-      });
-    } catch (error) {
-      console.error(error);
-    }
+      const updatedAgent = this.agentEntityToDtoMapper.mapOne(updatedAgentEntity);
 
-    return updatedAgent;
+      await this.eventsService.create(generateAgentUpdatedEvent(existingAgent, updatedAgent));
+
+      return updatedAgent;
+    });
   }
 }

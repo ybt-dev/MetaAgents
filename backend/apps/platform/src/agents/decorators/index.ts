@@ -7,7 +7,7 @@ export { default as InjectAgentService } from './inject-agent-service.decorator'
 export { default as InjectAgentTeamInteractionRepository } from './inject-agent-team-interaction-repository.decorator';
 export { default as InjectAgentTeamInteractionService } from './inject-agent-team-interaction-service.decorator';
 export { default as InjectAgentTeamInteractionEntityToDtoMapper } from './inject-agent-team-interaction-entity-to-dto-mapper.decorator';
-export { default as InjectAgentMessageRepository } from './inject-agent-message-repository.decorator';
-export { default as InjectAgentMessageService } from './inject-agent-message-service.decorator';
-export { default as InjectAgentMessageEntityToDtoMapper } from './inject-agent-message-entity-to-dto-mapper.decorator';
-export { default as InjectElizaApi } from './inject-eliza-api.decorator';
+export { default as InjectInteractionMessageRepository } from './inject-interaction-message-repository.decorator';
+export { default as InjectInteractionMessageService } from './inject-interaction-message-service.decorator';
+export { default as InjectInteractionMessageEntityToDtoMapper } from './inject-interaction-message-entity-to-dto-mapper.decorator';
+export { default as InjectAgentCommunicationRepliesService } from './inject-agent-communication-replies-service.decorator';

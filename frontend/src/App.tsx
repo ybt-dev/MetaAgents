@@ -11,7 +11,7 @@ import SessionsRestApi from './api/SessionsApi';
 import AgentTeamsRestApi from './api/AgentTeamsApi';
 import AgentsRestApi from './api/AgentsApi';
 import AgentTeamInteractionsRestApi from './api/AgentTeamInteractionsApi';
-import AgentMessagesRestApi from './api/AgentMessagesApi';
+import InteractionMessagesRestApi from './api/InteractionMessagesApi.ts';
 
 import { getFullnodeUrl } from '@mysten/sui/client';
 import { createNetworkConfig, SuiClientProvider, WalletProvider } from '@mysten/dapp-kit';
@@ -60,7 +60,7 @@ function App() {
       agentTeamsApi: new AgentTeamsRestApi(apiClient),
       agentTeamInteractionsApi: new AgentTeamInteractionsRestApi(apiClient),
       agentApi: new AgentsRestApi(apiClient),
-      agentMessagesApi: new AgentMessagesRestApi(apiClient),
+      interactionMessagesApi: new InteractionMessagesRestApi(apiClient),
     };
   }, []);
 
@@ -72,7 +72,9 @@ function App() {
             <ApiProvider value={services}>
               <AppInitializer>
                 <Header />
-                <Routing />
+                <main className="flex-grow overflow-y-auto">
+                  <Routing />
+                </main>
               </AppInitializer>
             </ApiProvider>
           </WalletProvider>

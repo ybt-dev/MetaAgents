@@ -2,41 +2,45 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TransactionsModule } from '@libs/transactions';
+import { EventsModule } from '@libs/events';
+import { EncryptionModule } from '@libs/encryption';
+import { DeduplicationModule } from '@libs/deduplication';
 import {
   AgentTeam,
   Agent,
   AgentTeamInteraction,
-  AgentMessage,
+  InteractionMessage,
   AgentTeamSchema,
   AgentSchema,
   AgentTeamInteractionSchema,
-  AgentMessageSchema,
+  InteractionMessageSchema,
 } from './schemas';
 import {
   DefaultAgentService,
   DefaultAgentTeamService,
   DefaultAgentTeamInteractionService,
-  DefaultAgentMessageService,
+  DefaultInteractionMessageService,
+  DefaultAgentCommunicationRepliesService,
 } from './services';
 import {
   AgentTeamController,
   AgentController,
   AgentTeamInteractionController,
-  AgentMessageController,
+  InteractionMessageController,
 } from './controllers';
 import {
   MongoAgentRepository,
   MongoAgentTeamInteractionRepository,
   MongoAgentTeamRepository,
-  MongoAgentMessageRepository,
+  MongoInteractionMessageRepository,
 } from './repositories';
 import {
   DefaultAgentEntityToDtoMapper,
   DefaultAgentTeamEntityToDtoMapper,
   DefaultAgentTeamInteractionEntityToDtoMapper,
-  DefaultAgentMessageEntityToDtoMapper,
+  DefaultInteractionMessageEntityToDtoMapper,
 } from './entities-mappers';
-import { ElizaRestApi } from './api';
+import { AgentCommunicationRepliesConsumer } from './consumers';
 import AgentsModuleTokens from './agents.module.tokens';
 
 @Module({
@@ -44,12 +48,16 @@ import AgentsModuleTokens from './agents.module.tokens';
     MongooseModule.forFeature([{ name: AgentTeam.name, schema: AgentTeamSchema }]),
     MongooseModule.forFeature([{ name: Agent.name, schema: AgentSchema }]),
     MongooseModule.forFeature([{ name: AgentTeamInteraction.name, schema: AgentTeamInteractionSchema }]),
-    MongooseModule.forFeature([{ name: AgentMessage.name, schema: AgentMessageSchema }]),
+    MongooseModule.forFeature([{ name: InteractionMessage.name, schema: InteractionMessageSchema }]),
     ConfigModule,
     TransactionsModule,
+    EventsModule,
+    EncryptionModule,
+    DeduplicationModule,
   ],
-  controllers: [AgentTeamController, AgentController, AgentTeamInteractionController, AgentMessageController],
+  controllers: [AgentTeamController, AgentController, AgentTeamInteractionController, InteractionMessageController],
   providers: [
+    AgentCommunicationRepliesConsumer,
     {
       provide: AgentsModuleTokens.Services.AgentTeamService,
       useClass: DefaultAgentTeamService,
@@ -87,27 +95,27 @@ import AgentsModuleTokens from './agents.module.tokens';
       useClass: DefaultAgentTeamInteractionEntityToDtoMapper,
     },
     {
-      provide: AgentsModuleTokens.Repositories.AgentMessageRepository,
-      useClass: MongoAgentMessageRepository,
+      provide: AgentsModuleTokens.Repositories.InteractionMessageRepository,
+      useClass: MongoInteractionMessageRepository,
     },
     {
-      provide: AgentsModuleTokens.Services.AgentMessageService,
-      useClass: DefaultAgentMessageService,
+      provide: AgentsModuleTokens.Services.InteractionMessageService,
+      useClass: DefaultInteractionMessageService,
     },
     {
-      provide: AgentsModuleTokens.EntityMappers.AgentMessageEntityToDtoMapper,
-      useClass: DefaultAgentMessageEntityToDtoMapper,
+      provide: AgentsModuleTokens.EntityMappers.InteractionMessageEntityToDtoMapper,
+      useClass: DefaultInteractionMessageEntityToDtoMapper,
     },
     {
-      provide: AgentsModuleTokens.Api.ElizaApi,
-      useClass: ElizaRestApi,
+      provide: AgentsModuleTokens.Services.AgentCommunicationRepliesServiceService,
+      useClass: DefaultAgentCommunicationRepliesService,
     },
   ],
   exports: [
     AgentsModuleTokens.Services.AgentTeamService,
     AgentsModuleTokens.Services.AgentService,
     AgentsModuleTokens.Services.AgentTeamInteractionService,
-    AgentsModuleTokens.Services.AgentMessageService,
+    AgentsModuleTokens.Services.InteractionMessageService,
   ],
 })
 export class AgentsModule {
