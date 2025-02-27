@@ -7,7 +7,6 @@ import { TransactionsManager } from '@libs/transactions/managers';
 import { MongodbTransaction } from '@libs/mongodb-transactions';
 import { AgentTeamInteraction } from '@apps/platform/agents/schemas';
 import { AgentTeamInteractionEntity, MongoAgentTeamInteractionEntity } from '@apps/platform/agents/entities';
-import { AgentTeamInteractionStatus } from '@apps/platform/agents/enums';
 
 export interface FindAgentTeamInteractionFilter {
   teamId?: string;
@@ -16,10 +15,8 @@ export interface FindAgentTeamInteractionFilter {
 
 export interface CreateAgentTeamInteractionParams {
   title: string;
-  requestContent: string;
   team: string;
   organization: string;
-  status: AgentTeamInteractionStatus;
   createdBy?: string | null;
 }
 
@@ -27,6 +24,7 @@ export interface AgentTeamInteractionRepository {
   findMany(filter: FindAgentTeamInteractionFilter): Promise<AgentTeamInteractionEntity[]>;
   findByIdAndOrganizationId(id: string, organizationId: string): Promise<AgentTeamInteractionEntity | null>;
   createOne(params: CreateAgentTeamInteractionParams): Promise<AgentTeamInteractionEntity>;
+  removeMessageIdFromRepliesQueue(interactionId: string, messageId: string): Promise<void>;
 }
 
 @Injectable()
@@ -80,5 +78,21 @@ export class MongoAgentTeamInteractionRepository implements AgentTeamInteraction
     });
 
     return new MongoAgentTeamInteractionEntity(agentTeamInteractionDocument);
+  }
+
+  public async removeMessageIdFromRepliesQueue(interactionId: string, messageId: string) {
+    await this.model.updateOne(
+      {
+        _id: new ObjectId(interactionId),
+      },
+      {
+        $pull: {
+          repliesQueue: messageId,
+        },
+      },
+      {
+        session: this.transactionsManager.getCurrentTransaction()?.getSession(),
+      },
+    );
   }
 }

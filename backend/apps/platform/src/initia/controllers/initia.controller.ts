@@ -1,70 +1,37 @@
-import { Controller, Inject, Post } from '@nestjs/common';
+import { Controller, Post, Body, Query, Get } from '@nestjs/common';
+import { InjectInitiaService } from '@apps/platform/initia/decorators';
+import { SendAmountDto, CreateNftCollectionDto } from '@apps/platform/initia/dto';
 import { InitiaService } from '@apps/platform/initia/services';
-import InitiaModuleTokens from '../initia.module.tokens';
 
 @Controller('initia')
 export class InitiaController {
-  constructor(@Inject(InitiaModuleTokens.Services.InitiaService) private readonly initiaService: InitiaService) {}
+  constructor(@InjectInitiaService() private readonly initiaService: InitiaService) {}
 
-  @Post('address')
-  getAddress(mnemonic: string, privateKey?: string): string {
-    return this.initiaService.getAddress(mnemonic, privateKey);
+  @Get('balance')
+  public getAddress(@Query('walletAddress') walletAddress: string) {
+    return this.initiaService.getWalletBalance(walletAddress);
   }
 
-  @Post('balance')
-  getBalance(address: string, mnemonic: string, privateKey?: string) {
-    return this.initiaService.getBalance(address, mnemonic, privateKey);
+  @Post('send-amount')
+  public sendTx(@Body() body: SendAmountDto) {
+    return this.initiaService.sendTx({
+      amount: body.amount,
+      sender: body.sender,
+      recipient: body.recipient,
+      encryptedPrivateKey: body.encryptedPrivateKey,
+    });
   }
 
-  @Post('send')
-  sendTx(sender: string, recipient: string, amount: string, mnemonic: string, privateKey?: string) {
-    return this.initiaService.sendTx(sender, recipient, amount, mnemonic, privateKey);
-  }
-
-  @Post('nftInfo')
-  getNftInfo(nftId: string, moduleOwner: string) {
-    return this.initiaService.getNftInfo(nftId, moduleOwner);
-  }
-
-  @Post('mintNft')
-  mintNft(
-    mnemonic: string,
-    destinationAddress: string,
-    collectionName: string,
-    name: string,
-    description: string,
-    imageUrl: string,
-    walletAddress: string,
-  ) {
-    return this.initiaService.mintNft(
-      mnemonic,
-      destinationAddress,
-      collectionName,
-      name,
-      description,
-      imageUrl,
-      walletAddress,
-    );
-  }
-
-  @Post('create_collection')
-  createCollection(
-    mnemonic: string,
-    destinationAddress: string,
-    name: string,
-    description: string,
-    uri: string,
-    maxSupply: number,
-    royalty: number,
-  ) {
-    return this.initiaService.createCollection(
-      mnemonic,
-      destinationAddress,
-      name,
-      description,
-      uri,
-      maxSupply,
-      royalty,
-    );
+  @Post('create-collection')
+  public createNftCollection(@Body() body: CreateNftCollectionDto) {
+    return this.initiaService.createNftCollection({
+      destinationAddress: body.destinationAddress,
+      name: body.name,
+      description: body.description,
+      uri: body.uri,
+      maxSupply: body.maxSupply,
+      royalty: body.royalty,
+      encryptedPrivateKey: body.encryptedPrivateKey,
+    });
   }
 }

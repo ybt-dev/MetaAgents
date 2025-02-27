@@ -1,16 +1,15 @@
 import { FlattenMaps } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { AgentTeamInteraction } from '@apps/platform/agents/schemas';
-import { AgentTeamInteractionStatus } from '@apps/platform/agents/enums';
 
 export interface AgentTeamInteractionEntity {
   getId(): string;
   getTitle(): string;
-  getRequestContent(): string;
   getTeamId(): string;
   getOrganizationId(): string;
-  getStatus(): AgentTeamInteractionStatus;
   getCreatedById(): string | null | undefined;
+  getAdditionalDataRequested(): boolean | undefined;
+  getRepliesQueue(): string[];
   getCreatedAt(): Date;
   getUpdatedAt(): Date;
 }
@@ -26,10 +25,6 @@ export class MongoAgentTeamInteractionEntity implements AgentTeamInteractionEnti
     return this.document.title;
   }
 
-  public getRequestContent() {
-    return this.document.requestContent;
-  }
-
   public getTeamId() {
     return this.document.team.toString();
   }
@@ -38,8 +33,12 @@ export class MongoAgentTeamInteractionEntity implements AgentTeamInteractionEnti
     return this.document.organization.toString();
   }
 
-  public getStatus() {
-    return this.document.status;
+  public getAdditionalDataRequested() {
+    return this.document.additionalDataRequested;
+  }
+
+  public getRepliesQueue() {
+    return this.document.repliesQueue;
   }
 
   public getCreatedById() {

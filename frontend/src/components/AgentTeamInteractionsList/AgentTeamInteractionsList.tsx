@@ -10,7 +10,7 @@ const SKELETON_LIST_ITEMS_COUNT = 3;
 
 const AgentTeamInteractionsList = ({ interactions, getAgentTeamInteractionsLink }: AgentTeamInteractionsListProps) => {
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col space-y-4">
       {!interactions
         ? Array.from({ length: SKELETON_LIST_ITEMS_COUNT }).map((_, index) => (
             <AgentTeamInteractionsListItemSkeleton key={index} />

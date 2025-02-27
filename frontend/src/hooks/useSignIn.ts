@@ -1,16 +1,13 @@
+import { useAddress, useWallet } from '@initia/react-wallet-widget';
 import useAsyncEffect from '@/hooks/useAsyncEffect';
 import useCreateSessionMutation from '@/hooks/mutations/useCreateSessionMutation';
 import useCreateSessionNonceMutation from '@/hooks/mutations/useCreateSessionNonceMutation';
 import useSession from '@/hooks/useSession';
-import { useCurrentAccount, useSignPersonalMessage } from '@mysten/dapp-kit';
-
-interface Signature {
-  signature: string;
-  bytes: string;
-}
 
 const useSignIn = () => {
-  const account = useCurrentAccount();
+  const { signArbitrary, account } = useWallet();
+
+  const address = useAddress();
 
   const [currentUser] = useSession();
 
@@ -19,33 +16,29 @@ const useSignIn = () => {
   const { mutateAsync: createSessionNonce } = useCreateSessionNonceMutation();
   const { mutateAsync: createSession } = useCreateSessionMutation();
 
-  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
-
   useAsyncEffect(async () => {
-    if (!account?.address || currentUserId !== null) {
+    if (!account || address.length == 0 || currentUserId !== null) {
       return;
     }
 
     try {
-      const nonce = await createSessionNonce(account?.address || '');
+      const nonce = await createSessionNonce(address || '');
 
-      const message = new TextEncoder().encode('Sign in with Sui to the SuiHubAi');
-      const preparedMessage = 'Sign in with Sui to the SuiHubAi';
+      const message = new TextEncoder().encode('Sign in with Initia to the MetaAgents');
+      const preparedMessage = 'Sign in with Initia to the MetaAgents';
 
-      // TODO Handle case with non loaded providers.
-      const res: Signature = (await signPersonalMessage({
-        message: message,
-      })) as unknown as Signature;
+      const hashedMsg = await signArbitrary(message);
 
       await createSession({
-        signature: res.signature || '',
+        signature: hashedMsg || '',
         message: preparedMessage,
+        pubKey: account?.pubkey.toString() || '',
         nonce,
       });
     } catch (error) {
       console.error('Error signing in: ', error);
     }
-  }, [currentUserId, account?.address]);
+  }, [currentUserId, account, address]);
 };
 
 export default useSignIn;

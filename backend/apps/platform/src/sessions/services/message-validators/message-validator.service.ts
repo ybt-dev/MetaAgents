@@ -5,5 +5,5 @@ export interface MessageVerificationResult {
 }
 
 export interface MessageValidatorService {
-  verify(message: string, signature: string): Promise<MessageVerificationResult>;
+  verify(message: string, signature: string, pubKey?: string): Promise<MessageVerificationResult>;
 }

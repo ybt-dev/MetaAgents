@@ -15,6 +15,7 @@ import { generateNonce } from '@apps/platform/sessions/utils';
 export interface CreateSessionParams {
   message: string;
   signature: string;
+  pubKey?: string;
   provider: AuthProvider;
 }
 
@@ -44,8 +45,11 @@ export class DefaultSessionService implements SessionService {
 
   public async create(params: CreateSessionParams) {
     const messageValidatorService = this.messageValidatorServiceFactory(params.provider);
-
-    const { success, nonce, address } = await messageValidatorService.verify(params.message, params.signature);
+    const { success, nonce, address } = await messageValidatorService.verify(
+      params.message,
+      params.signature,
+      params.pubKey,
+    );
 
     if (!success) {
       throw new UnauthorizedException('Failed to verify signature.');

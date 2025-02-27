@@ -76,8 +76,77 @@
       "@libs/jwt": [
         "./libs/jwt/src"
       ],
-      "@libs/jwt/*": [
-        "./libs/jwt/src/*"
+      "@libs/consumers": [
+        "./libs/consumers/src"
+      ],
+      "@libs/consumers/*": [
+        "./libs/consumers/src/*"
+      ],
+      "@libs/deduplication": [
+        "./libs/deduplication/src"
+      ],
+      "@libs/deduplication/*": [
+        "./libs/deduplication/src/*"
+      ],
+      "@libs/events": [
+        "./libs/events/src"
+      ],
+      "@libs/events/*": [
+        "./libs/events/src/*"
+      ],
+      "@libs/idempotency": [
+        "./libs/idempotency/src"
+      ],
+      "@libs/idempotency/*": [
+        "./libs/idempotency/src/*"
+      ],
+      "@libs/lock": [
+        "./libs/lock/src"
+      ],
+      "@libs/lock/*": [
+        "./libs/lock/src/*"
+      ],
+      "@libs/publishers": [
+        "./libs/publishers/src"
+      ],
+      "@libs/publishers/*": [
+        "./libs/publishers/src/*"
+      ],
+      "@libs/redis-lock": [
+        "./libs/redis-lock/src"
+      ],
+      "@libs/redis-lock/*": [
+        "./libs/redis-lock/src/*"
+      ],
+      "@libs/sns": [
+        "./libs/sns/src"
+      ],
+      "@libs/sns/*": [
+        "./libs/sns/src/*"
+      ],
+      "@libs/sns-publishers": [
+        "./libs/sns-publishers/src"
+      ],
+      "@libs/sns-publishers/*": [
+        "./libs/sns-publishers/src/*"
+      ],
+      "@libs/sqs": [
+        "./libs/sqs/src"
+      ],
+      "@libs/sqs/*": [
+        "./libs/sqs/src/*"
+      ],
+      "@libs/sqs-consumers": [
+        "./libs/sqs-consumers/src"
+      ],
+      "@libs/sqs-consumers/*": [
+        "./libs/sqs-consumers/src/*"
+      ],
+      "@libs/encryption": [
+        "./libs/encryption/src"
+      ],
+      "@libs/encryption/*": [
+        "./libs/encryption/src/*"
       ],
       "@apps/platform/*": [
         "./apps/platform/src/*"

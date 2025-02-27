@@ -1,5 +1,5 @@
+import WalletConnection from '@/components/WalletConnection';
 import { APP_NAME } from '@/constants/core.ts';
-import { ConnectButton } from '@mysten/dapp-kit';
 
 const Home = () => {
   return (
@@ -13,7 +13,7 @@ const Home = () => {
           </h3>
         </div>
         <div className="flex flex-col">
-          <ConnectButton className="w-full" />
+          <WalletConnection />
         </div>
       </div>
       <img className="fixed bottom-0 h-full" src="/grid.png" alt="grid" />

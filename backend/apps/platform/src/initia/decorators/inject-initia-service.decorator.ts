@@ -1,8 +1,8 @@
 import { Inject } from '@nestjs/common';
 import InitiaModuleTokens from '../initia.module.tokens';
 
-const InjectSessionService = () => {
+const InjectInitiaService = () => {
   return Inject(InitiaModuleTokens.Services.InitiaService);
 };
 
-export default InjectSessionService;
+export default InjectInitiaService;

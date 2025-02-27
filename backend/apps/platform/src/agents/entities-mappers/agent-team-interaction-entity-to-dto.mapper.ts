@@ -13,10 +13,9 @@ export class DefaultAgentTeamInteractionEntityToDtoMapper implements AgentTeamIn
     return {
       id: entity.getId(),
       title: entity.getTitle(),
-      requestContent: entity.getRequestContent(),
       teamId: entity.getTeamId(),
+      repliesQueue: entity.getRepliesQueue(),
       organizationId: entity.getOrganizationId(),
-      status: entity.getStatus(),
       createdById: entity.getCreatedById(),
       createdAt: entity.getCreatedAt(),
       updatedAt: entity.getUpdatedAt(),

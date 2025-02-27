@@ -17,6 +17,96 @@
         "tsConfigPath": "apps/platform/tsconfig.app.json"
       }
     },
+    "consumers": {
+      "type": "library",
+      "root": "libs/consumers",
+      "entryFile": "index",
+      "sourceRoot": "libs/consumers/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/consumers/tsconfig.lib.json"
+      }
+    },
+    "deduplication": {
+      "type": "library",
+      "root": "libs/deduplication",
+      "entryFile": "index",
+      "sourceRoot": "libs/deduplication/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/deduplication/tsconfig.lib.json"
+      }
+    },
+    "events": {
+      "type": "library",
+      "root": "libs/events",
+      "entryFile": "index",
+      "sourceRoot": "libs/events/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/events/tsconfig.lib.json"
+      }
+    },
+    "idempotency": {
+      "type": "library",
+      "root": "libs/idempotency",
+      "entryFile": "index",
+      "sourceRoot": "libs/idempotency/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/idempotency/tsconfig.lib.json"
+      }
+    },
+    "lock": {
+      "type": "library",
+      "root": "libs/lock",
+      "entryFile": "index",
+      "sourceRoot": "libs/lock/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/lock/tsconfig.lib.json"
+      }
+    },
+    "publishers": {
+      "type": "library",
+      "root": "libs/publishers",
+      "entryFile": "index",
+      "sourceRoot": "libs/publishers/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/publishers/tsconfig.lib.json"
+      }
+    },
+    "sns": {
+      "type": "library",
+      "root": "libs/sns",
+      "entryFile": "index",
+      "sourceRoot": "libs/sns/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/sns/tsconfig.lib.json"
+      }
+    },
+    "sns-publishers": {
+      "type": "library",
+      "root": "libs/sns-publishers",
+      "entryFile": "index",
+      "sourceRoot": "libs/sns-publishers/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/sns-publishers/tsconfig.lib.json"
+      }
+    },
+    "sqs": {
+      "type": "library",
+      "root": "libs/sqs",
+      "entryFile": "index",
+      "sourceRoot": "libs/sqs/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/sqs/tsconfig.lib.json"
+      }
+    },
+    "sqs-consumers": {
+      "type": "library",
+      "root": "libs/sqs-consumers",
+      "entryFile": "index",
+      "sourceRoot": "libs/sqs-consumers/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/sqs-consumers/tsconfig.lib.json"
+      }
+    },
     "database-tools": {
       "type": "library",
       "root": "libs/database-tools",
@@ -95,12 +185,13 @@
         "tsConfigPath": "libs/validation/tsconfig.lib.json"
       }
     },
-    "jwt": {
+    "encryption": {
       "type": "library",
-      "root": "libs/jwt",
-      "sourceRoot": "libs/jwt/src",
+      "root": "libs/encryption",
+      "entryFile": "index",
+      "sourceRoot": "libs/encryption/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/jwt/tsconfig.lib.json"
+        "tsConfigPath": "libs/encryption/tsconfig.lib.json"
       }
     }
   }

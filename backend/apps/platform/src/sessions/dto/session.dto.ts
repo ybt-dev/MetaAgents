@@ -13,6 +13,9 @@ export class CreateSessionDto {
   @IsNotEmpty()
   @IsIn(Object.values(AuthProvider))
   provider: AuthProvider;
+
+  @IsString()
+  pubKey?: string;
 }
 
 export class CreateSessionNonceDto {

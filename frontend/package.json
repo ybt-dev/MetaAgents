@@ -10,14 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mysten/dapp-kit": "^0.14.50",
-    "@mysten/sui": "^1.21.2",
-    "@radix-ui/react-dialog": "^1.1.6",
+    "@initia/initia.js": "^0.2.29",
+    "@initia/react-wallet-widget": "^0.200.0",
+    "@initia/wallet-widget": "^0.200.0",
     "@tailwindcss/vite": "^4.0.4",
     "@tanstack/react-query": "^5.66.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "ethers": "^6.13.5",
     "javascript-time-ago": "^2.5.11",
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
@@ -26,8 +25,7 @@
     "react-toastify": "^11.0.3",
     "tailwind-merge": "^3.0.1",
     "tailwindcss": "^4.0.4",
-    "tailwindcss-animate": "^1.0.7",
-    "viem": "2.x"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",
