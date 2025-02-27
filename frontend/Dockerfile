@@ -3,7 +3,6 @@ FROM node:20.13.1 AS frontend-build
 WORKDIR /usr/src/app
 
 COPY package.json ./
-COPY yarn.lock ./
 
 RUN yarn install
 
