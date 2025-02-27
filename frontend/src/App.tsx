@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { BrowserRouter } from 'react-router';
+import { WalletWidgetProvider } from '@initia/react-wallet-widget';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast, ToastContainer } from 'react-toastify';
 import { RestApiClient } from './api/ApiClient';
@@ -12,7 +13,7 @@ import AgentTeamsRestApi from './api/AgentTeamsApi';
 import AgentsRestApi from './api/AgentsApi';
 import AgentTeamInteractionsRestApi from './api/AgentTeamInteractionsApi';
 import AgentMessagesRestApi from './api/AgentMessagesApi';
-import { WalletWidgetProvider } from '@initia/react-wallet-widget';
+import InteractionMessagesRestApi from './api/InteractionMessagesApi.ts';
 
 import './tailwind.css';
 
@@ -45,7 +46,7 @@ function App() {
       agentTeamsApi: new AgentTeamsRestApi(apiClient),
       agentTeamInteractionsApi: new AgentTeamInteractionsRestApi(apiClient),
       agentApi: new AgentsRestApi(apiClient),
-      agentMessagesApi: new AgentMessagesRestApi(apiClient),
+      interactionMessagesApi: new InteractionMessagesRestApi(apiClient),
     };
   }, []);
 
@@ -56,7 +57,9 @@ function App() {
           <ApiProvider value={services}>
             <AppInitializer>
               <Header />
-              <Routing />
+              <main className="flex-grow overflow-y-auto">
+                <Routing />
+              </main>
             </AppInitializer>
           </ApiProvider>
         </WalletWidgetProvider>

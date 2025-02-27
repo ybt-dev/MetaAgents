@@ -9,12 +9,7 @@ import { DefaultSessionService } from './services';
 import { MongoSessionNonceRepository } from './repositories';
 import { SessionNonce, SessionNonceSchema } from './schemas';
 import { AuthProvider } from './enums';
-import {
-  MessageValidatorService,
-  SuiMessageValidatorService,
-  EthMessageValidatorService,
-  InitiaMessageValidatorService,
-} from './services/message-validators';
+import { MessageValidatorService, InitiaMessageValidatorService } from './services/message-validators';
 import SessionsModuleTokens from './sessions.module.tokens';
 
 @Module({
@@ -37,34 +32,16 @@ import SessionsModuleTokens from './sessions.module.tokens';
     },
     {
       provide: SessionsModuleTokens.Factories.MessageValidatorServiceFactory,
-      useFactory: (
-        suiMessageValidatorService: MessageValidatorService,
-        ethMessageValidatorService: MessageValidatorService,
-        initiaMessageValidatorService: MessageValidatorService,
-      ) => {
+      useFactory: (initiaMessageValidatorService: MessageValidatorService) => {
         return (authProvider: AuthProvider) => {
           switch (authProvider) {
-            case AuthProvider.Eth: {
-              return ethMessageValidatorService;
-            }
-            case AuthProvider.Sui: {
-              return suiMessageValidatorService;
-            }
             case AuthProvider.Initia: {
               return initiaMessageValidatorService;
             }
           }
         };
       },
-      inject: [SuiMessageValidatorService, EthMessageValidatorService, InitiaMessageValidatorService],
-    },
-    {
-      provide: SuiMessageValidatorService,
-      useClass: SuiMessageValidatorService,
-    },
-    {
-      provide: EthMessageValidatorService,
-      useClass: EthMessageValidatorService,
+      inject: [InitiaMessageValidatorService],
     },
     {
       provide: InitiaMessageValidatorService,

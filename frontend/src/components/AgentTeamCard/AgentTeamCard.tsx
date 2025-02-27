@@ -6,7 +6,7 @@ export interface AgentTeamCardProps {
 
 const AgentTeamCard = ({ name, description, onEditButtonClick }: AgentTeamCardProps) => {
   return (
-    <div className="rounded-lg bg-gray-800/50 p-4 hover:bg-gray-800/70 transition-colors">
+    <div className="rounded-lg bg-gray-800/50 p-4 hover:bg-gray-800/70 transition-colors gradient-background-animation">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-100">{name}</h3>

@@ -1,11 +1,12 @@
+import { useAddress, useWallet } from '@initia/react-wallet-widget';
 import useAsyncEffect from '@/hooks/useAsyncEffect';
 import useCreateSessionMutation from '@/hooks/mutations/useCreateSessionMutation';
 import useCreateSessionNonceMutation from '@/hooks/mutations/useCreateSessionNonceMutation';
 import useSession from '@/hooks/useSession';
-import { useAddress, useWallet } from '@initia/react-wallet-widget';
 
 const useSignIn = () => {
   const { signArbitrary, account } = useWallet();
+
   const address = useAddress();
 
   const [currentUser] = useSession();
@@ -27,6 +28,7 @@ const useSignIn = () => {
       const preparedMessage = 'Sign in with Initia to the MetaAgents';
 
       const hashedMsg = await signArbitrary(message);
+
       await createSession({
         signature: hashedMsg || '',
         message: preparedMessage,

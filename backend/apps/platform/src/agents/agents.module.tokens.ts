@@ -1,24 +1,23 @@
 const AgentsModuleTokens = {
-  Api: {
-    ElizaApi: Symbol('ElizaApi'),
-  },
   Services: {
     AgentTeamService: Symbol('AgentTeamService'),
     AgentService: Symbol('AgentService'),
     AgentTeamInteractionService: Symbol('AgentTeamInteractionService'),
-    AgentMessageService: Symbol('AgentMessageService'),
+    InteractionMessageService: Symbol('InteractionMessageService'),
+    AgentCommunicationRepliesServiceService: Symbol('AgentCommunicationRepliesServiceService'),
+    AgentWalletGeneratorService: Symbol('AgentWalletGeneratorService'),
   },
   Repositories: {
     AgentTeamRepository: Symbol('AgentTeamRepository'),
     AgentRepository: Symbol('AgentRepository'),
     AgentTeamInteractionRepository: Symbol('AgentTeamInteractionRepository'),
-    AgentMessageRepository: Symbol('AgentMessageRepository'),
+    InteractionMessageRepository: Symbol('InteractionMessageRepository'),
   },
   EntityMappers: {
     AgentTeamEntityToDtoMapper: Symbol('AgentTeamEntityToDtoMapper'),
     AgentEntityToDtoMapper: Symbol('AgentEntityToDtoMapper'),
     AgentTeamInteractionEntityToDtoMapper: Symbol('AgentTeamInteractionEntityToDtoMapper'),
-    AgentMessageEntityToDtoMapper: Symbol('AgentMessageEntityToDtoMapper'),
+    InteractionMessageEntityToDtoMapper: Symbol('InteractionMessageEntityToDtoMapper'),
   },
 };
 
