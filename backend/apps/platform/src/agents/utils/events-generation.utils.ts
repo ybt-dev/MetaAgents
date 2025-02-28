@@ -9,6 +9,7 @@ import { AgentDto, AgentTeamInteractionDto, InteractionMessageDto } from '@apps/
 import {
   AgentCommunicationRequestedEventData,
   AgentCreatedEventData,
+  AgentDeletedEventData,
   AgentUpdatedEventData,
 } from '@apps/platform/agents/types';
 
@@ -58,5 +59,16 @@ export const generateAgentUpdatedEvent = (
       object: updatedAgent,
     },
     userId: updatedAgent.updatedById,
+  };
+};
+
+export const generateAgentDeletedEvent = (agent: AgentDto): CreateEventParams<AgentDeletedEventData> => {
+  return {
+    type: AgentEventType.AgentDeleted,
+    category: AgentsEventCategory.Agents,
+    data: {
+      object: agent,
+    },
+    userId: agent.updatedById,
   };
 };

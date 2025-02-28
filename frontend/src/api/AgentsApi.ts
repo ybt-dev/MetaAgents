@@ -53,6 +53,7 @@ export interface AgentsApi {
   getAgentById(agentId: string): Promise<Agent>;
   createAgent(params: CreateAgentParams): Promise<Agent>;
   updateAgent(agentId: string, params: UpdateAgentParams): Promise<Agent>;
+  deleteAgent(agentId: string): Promise<Agent>;
 }
 
 export default class AgentsRestApi implements AgentsApi {
@@ -72,5 +73,9 @@ export default class AgentsRestApi implements AgentsApi {
 
   public async updateAgent(agentId: string, params: UpdateAgentParams) {
     return this.client.makeCall<Agent>(`/agents/${agentId}`, 'PUT', params);
+  }
+
+  public async deleteAgent(agentId: string) {
+    return this.client.makeCall<Agent>(`/agents/${agentId}`, 'DELETE', {});
   }
 }
