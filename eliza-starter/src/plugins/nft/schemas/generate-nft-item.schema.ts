@@ -12,10 +12,7 @@ const generateNftItemSchema = z.object({
     .regex(/^[a-zA-Z0-9_-]+$/)
     .describe('Unique identifier for the NFT within the collection (alphanumeric, underscore, and hyphen only)'),
 
-  recipient: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .describe('Initia wallet address that will receive the NFT (0x format)'),
+  recipient: z.string().describe('Initia wallet address that will receive the NFT (0x format)'),
 });
 
 export default generateNftItemSchema;
