@@ -44,20 +44,20 @@ The server will be running on port `3001` (`http://localhost:3001`).
 
 ---
 
-## **Running Eliza-Starter**  
-Eliza-Starter is an additional component that extends the project’s functionality.
+## **Running Agents System**  
+Agent System is an additional component that extends the project’s functionality.
 
 ### **Steps to Run:**  
-1. Navigate to the `eliza-starter` folder.  
-2. Ensure that the `.env` file is correctly configured.  
+1. Navigate to the `agents-system` folder.  
+2. Ensure that the `.env` file is correctly configured based on .env.example.  
 3. Install all dependencies.  
 4. Start the application.
 
 ### **Commands:**  
 ```bash
-cd eliza-starter
-npm install    # or yarn install | pnpm install
-npm start      # or yarn start | pnpm start
+cd agent-system
+pnpm install
+pnpm start
 ```
 
 ---
