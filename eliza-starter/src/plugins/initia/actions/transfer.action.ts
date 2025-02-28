@@ -16,14 +16,13 @@ import { transferActionTemplate } from '../templates/action.templates.ts';
 import initiaTransferSchema from '../schemas/transfer.schema.ts';
 
 export interface TransferContent extends Content {
-  sender: string;
   recipient: string;
   amount: string;
 }
 
 export default class InitiaTransferAction implements Action {
   public name = 'SEND_TOKEN';
-  public description = '';
+  public description = 'Sends INITIA tokens to a recipient.';
 
   public similes = [
     'TRANSFER_TOKEN_ON_INITIA',
@@ -70,7 +69,7 @@ export default class InitiaTransferAction implements Action {
       template: transferActionTemplate,
     });
 
-    const content = await generateObject({
+    const { object: content } = await generateObject({
       runtime,
       context: transferContext,
       modelClass: ModelClass.LARGE,
@@ -90,7 +89,7 @@ export default class InitiaTransferAction implements Action {
       const encryptedPrivateKey = runtime.getSetting(AgentSettingsKey.InitiaEncryptedPrivateKey);
 
       const { transactionId } = await this.initiaApi.sendAmount({
-        sender: content.sender,
+        sender: runtime.getSetting(AgentSettingsKey.InitiaWalletAddress),
         recipient: content.recipient,
         amount: content.amount,
         encryptedPrivateKey,
@@ -99,10 +98,15 @@ export default class InitiaTransferAction implements Action {
       await callback?.({
         text: `Successfully transferred INITIA.
   Transaction Hash: ${transactionId}
-  Sender: ${content.sender}
+  Sender: ${runtime.character.name}
   Recipient: ${content.recipient}
   Amount: ${content.amount}`,
-        content: { transactionId, sender: content.sender, recipient: content.recipient, amount: content.amount },
+        content: {
+          transactionId,
+          sender: runtime.character.name,
+          recipient: content.recipient,
+          amount: content.amount,
+        },
       });
 
       return true;
@@ -122,12 +126,10 @@ export default class InitiaTransferAction implements Action {
     return (
       typeof content === 'object' &&
       content !== null &&
-      'sender' in content &&
-      typeof content.sender === 'string' &&
       'recipient' in content &&
       typeof content.recipient === 'string' &&
       'amount' in content &&
-      content.amount === 'number'
+      typeof content.amount === 'string'
     );
   }
 }

@@ -24,9 +24,9 @@ export class DefaultAgentsControlService implements AgentsControlService {
     private characterFactory: CharacterFactory,
     private agentsManager: AgentsManager,
   ) {
-    this.consumer = this.consumerFactory.createConsumer(ConsumerName.AgentsControl, (message) =>
-      this.handleAgentsControlEvent(message.payload as AgentsControlEvent),
-    );
+    this.consumer = this.consumerFactory.createConsumer(ConsumerName.AgentsControl, async (message) => {
+      await this.handleAgentsControlEvent(message.payload as AgentsControlEvent);
+    });
   }
 
   public async start() {

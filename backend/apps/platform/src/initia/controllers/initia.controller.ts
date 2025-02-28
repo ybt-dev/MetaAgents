@@ -25,7 +25,6 @@ export class InitiaController {
   @Post('create-collection')
   public createNftCollection(@Body() body: CreateNftCollectionDto) {
     return this.initiaService.createNftCollection({
-      destinationAddress: body.destinationAddress,
       name: body.name,
       description: body.description,
       uri: body.uri,

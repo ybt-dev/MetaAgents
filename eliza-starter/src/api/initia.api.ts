@@ -12,19 +12,8 @@ export interface SendAmountParams {
   encryptedPrivateKey: string;
 }
 
-export interface TransactionLog {
-  events: Array<{
-    type: string;
-    attributes: Array<{
-      key: string;
-      value: string;
-    }>;
-  }>;
-}
-
 export interface TransactionResult {
   transactionId: string;
-  logs: TransactionLog[];
 }
 
 export interface CreateNftCollectionParams {
@@ -36,11 +25,15 @@ export interface CreateNftCollectionParams {
   royalty: number;
 }
 
+export interface CreateNftCollectionTransactionResult extends TransactionResult {
+  collectionId?: string;
+}
+
 // Temporary solution, cause initia.js is broken in ESM modules.
 export interface InitiaApi {
   sendAmount(params: SendAmountParams): Promise<TransactionResult>;
   getWalletBalance(walletAddress: string): Promise<WalletBalance>;
-  createNftCollection(params: CreateNftCollectionParams): Promise<TransactionResult>;
+  createNftCollection(params: CreateNftCollectionParams): Promise<CreateNftCollectionTransactionResult>;
 }
 
 export class RestInitiaApi implements InitiaApi {

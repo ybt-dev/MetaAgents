@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useOutletContext } from 'react-router';
+import { useNavigate, useOutletContext } from 'react-router';
 import { Plus } from 'lucide-react';
 import { AgentTeamInteractionFormData } from '@/components/AgentTeamInteractionForm';
 import useCreateAgentTeamInteractionMutation from '@/hooks/mutations/useCreateAgentTeamInteractionMutation';
@@ -13,6 +13,8 @@ const TeamInteractions = () => {
 
   const teamId = useOutletContext<string>();
 
+  const navigate = useNavigate();
+
   const { data: agentTeamInteractions } = useListAgentTeamInteractionsQuery(teamId);
 
   const { mutateAsync: createAgentTeamInteraction } = useCreateAgentTeamInteractionMutation();
@@ -25,11 +27,13 @@ const TeamInteractions = () => {
   };
 
   const handleCreateAgentTeamInteractionSubmit = async (data: AgentTeamInteractionFormData) => {
-    await createAgentTeamInteraction({
+    const interaction = await createAgentTeamInteraction({
       teamId,
       title: data.title,
       requestContent: data.requestContent,
     });
+
+    navigate(getAgentTeamInteractionsLink(interaction.id));
 
     hideAgentTeamInteractionPopup();
   };

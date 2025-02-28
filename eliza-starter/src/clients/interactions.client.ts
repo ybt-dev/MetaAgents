@@ -176,7 +176,7 @@ export default class InteractionsClient {
           teamId: agent.configuration.teamId,
           organizationId: agent.configuration.organizationId,
           repliedToMessageId: triggerMessageId,
-          text: response.text,
+          text: response.text ?? 'Unable to extract a response text',
           actionText: actionMessage?.text ?? '',
         },
       },

@@ -27,14 +27,6 @@ import influencerCharacterTemplate from './character-templates/influencer.templa
 
 configDotenv();
 
-process.on('uncaughtException', (error) => {
-  console.error(error);
-});
-
-process.on('unhandledRejection', (promise) => {
-  console.error(promise);
-});
-
 const initializeDatabaseClient = () => {
   const DATABASE_URL = process.env.MONGODB_URL || '';
 

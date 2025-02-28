@@ -29,5 +29,5 @@ RESPONSE FORMAT:
   }
 ]
 
-ALWAYS RESPOND IN JSON FORMAT TO ENSURE THAT THE MESSAGE CAN BE PARSED CORRECTLY. IF NO MENTIONS ARE FOUND, RESPOND WITH AN EMPTY ARRAY. DO NOT INCLUDE JSON BLOCKS IN YOUR RESPONSES.
+Note: Do not put json markdown block in response. Your message should be parseable via JSON.parse() function. (not white space or new lines at the beginning or end of the response)
 `;

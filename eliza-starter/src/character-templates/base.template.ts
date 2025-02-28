@@ -39,6 +39,7 @@ const baseCharacterTemplate = (
     modelProvider: agentConfiguration.model,
     id: agentConfiguration.id as Character['id'],
     name: agentConfiguration.name,
+    imageModelProvider: ModelProviderName.TOGETHER,
     settings: {
       secrets: {
         [AgentSettingsKey.InitiaPrivateKey]: privateKey,
@@ -48,6 +49,7 @@ const baseCharacterTemplate = (
         TWITTER_USERNAME: agentConfiguration.config.twitterUsername,
         TWITTER_PASSWORD: agentConfiguration.config.twitterPassword,
         TWITTER_EMAIL: agentConfiguration.config.twitterEmail,
+        TOGETHER_API_KEY: process.env.TOGETHER_API_KEY,
         ...getSecretsByModel(agentConfiguration.model, agentConfiguration.modelApiKey),
       },
     },

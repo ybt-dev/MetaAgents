@@ -21,10 +21,6 @@ export class SendAmountDto {
 export class CreateNftCollectionDto {
   @IsString()
   @IsNotEmpty()
-  destinationAddress: string;
-
-  @IsString()
-  @IsNotEmpty()
   name: string;
 
   @IsString()
