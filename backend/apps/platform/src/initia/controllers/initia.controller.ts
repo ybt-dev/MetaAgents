@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Query, Get } from '@nestjs/common';
 import { InjectInitiaService } from '@apps/platform/initia/decorators';
-import { SendAmountDto, CreateNftCollectionDto } from '@apps/platform/initia/dto';
+import { SendAmountDto, CreateNftCollectionDto, MintNftDto } from '@apps/platform/initia/dto';
 import { InitiaService } from '@apps/platform/initia/services';
 
 @Controller('initia')
@@ -31,6 +31,18 @@ export class InitiaController {
       maxSupply: body.maxSupply,
       royalty: body.royalty,
       encryptedPrivateKey: body.encryptedPrivateKey,
+    });
+  }
+
+  @Post('mint-nft')
+  public mintNft(@Body() body: MintNftDto) {
+    return this.initiaService.mintNft({
+      encryptedPrivateKey: body.encryptedPrivateKey,
+      collectionName: body.collectionName,
+      description: body.description,
+      tokenId: body.tokenId,
+      uri: body.uri,
+      recipient: body.recipient,
     });
   }
 }

@@ -43,3 +43,29 @@ export class CreateNftCollectionDto {
   @IsNotEmpty()
   encryptedPrivateKey: string;
 }
+
+export class MintNftDto {
+  @IsString()
+  @IsNotEmpty()
+  collectionName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  description: string;
+
+  @IsString()
+  @IsNotEmpty()
+  tokenId: string;
+
+  @IsString()
+  @IsNotEmpty()
+  uri: string;
+
+  @IsString()
+  @IsNotEmpty()
+  recipient: string;
+
+  @IsString()
+  @IsNotEmpty()
+  encryptedPrivateKey: string;
+}
