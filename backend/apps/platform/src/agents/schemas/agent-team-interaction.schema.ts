@@ -19,17 +19,14 @@ export class AgentTeamInteraction {
   @Prop({ required: false, type: mongoose.Schema.Types.ObjectId })
   createdBy?: ObjectId | null;
 
+  @Prop({ required: true, type: mongoose.Schema.Types.Date })
+  lockedTill?: Date;
+
   @Prop({ required: false, type: mongoose.Schema.Types.Date })
   createdAt: Date;
 
   @Prop({ required: false, type: mongoose.Schema.Types.Date })
   updatedAt: Date;
-
-  @Prop({ required: false, type: mongoose.Schema.Types.Boolean })
-  additionalDataRequested?: boolean;
-
-  @Prop({ required: true, type: [mongoose.Schema.Types.String] })
-  repliesQueue: string[];
 }
 
 export const AgentTeamInteractionSchema = SchemaFactory.createForClass(AgentTeamInteraction);

@@ -16,7 +16,6 @@ import { AgentConfigurationsRepository } from '../../../repositories/agent-confi
 import { communicationTemplate } from '../templates/evaluator.templates.ts';
 import AgentTeamInteractionsEventType from '../../../enums/agent-team-interactions-event-type.enum.ts';
 import AgentsEventCategory from '../../../enums/agents-event-category.enum.ts';
-import { AgentTeamInteractionsRepository } from '../../../repositories/agent-team-interactions.repository.ts';
 
 export interface ExtractedCommunicationRequest {
   actorId: string | 'user';
@@ -119,10 +118,8 @@ export default class InteractionsEvaluator implements Evaluator {
 
   constructor(
     private agentConfigurationsRepository: AgentConfigurationsRepository,
-    private agentTeamInteractionsRepository: AgentTeamInteractionsRepository,
     private agentsManager: AgentsManager,
     private publisherFactory: PublisherFactory,
-    private allowUserMentions: boolean = true,
   ) {
     this.publisher = this.publisherFactory.createPublisher(PublisherName.AgentsCommunication);
   }
@@ -161,9 +158,7 @@ export default class InteractionsEvaluator implements Evaluator {
       }
 
       for (const request of requests) {
-        if (request.actorId === 'user' && this.allowUserMentions) {
-          await this.agentTeamInteractionsRepository.addMessageIdToRepliesQueue(responseMessageId, interactionId);
-
+        if (request.actorId === 'user') {
           continue;
         }
 

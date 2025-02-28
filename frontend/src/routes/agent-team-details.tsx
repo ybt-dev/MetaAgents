@@ -29,7 +29,7 @@ const AgentTeamDetails = () => {
         onSelectCategory={handleSelectCategory}
         goBackButtonLink="/agent-teams"
       />
-      <div className="flex-grow p-6 overflow-auto">
+      <div className="relative flex-grow p-6 overflow-auto">
         <Outlet context={agentTeamId} />
       </div>
     </div>

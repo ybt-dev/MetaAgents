@@ -96,11 +96,11 @@ const initializeAgentsSystem = async () => {
     sqsConsumerFactory,
     snsPublisherFactory,
     idGenerationHelper,
+    agentTeamInteractionsRepository,
   );
 
   const characterFactory = new DefaultCharacterFactory(
     agentConfigurationsRepository,
-    agentTeamInteractionsRepository,
     agentsManager,
     snsPublisherFactory,
     encryptionHelper,

@@ -7,6 +7,7 @@ export interface AgentTeamInteraction {
   organizationId: string;
   teamId: string;
   createdById?: string | null;
+  lockedTill?: string | Date | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -21,6 +22,7 @@ export interface AgentTeamInteractionsApi {
   listForTeam(teamId: string): Promise<AgentTeamInteraction[]>;
   getAgentTeamInteractionById(id: string): Promise<AgentTeamInteraction>;
   createAgentTeamInteraction(params: CreateAgentTeamInteraction): Promise<AgentTeamInteraction>;
+  replyToAgentTeamInteraction(id: string, replyContent: string): Promise<AgentTeamInteraction>;
 }
 
 export default class AgentConversationsRestApi implements AgentTeamInteractionsApi {
@@ -40,5 +42,9 @@ export default class AgentConversationsRestApi implements AgentTeamInteractionsA
 
   public createAgentTeamInteraction(params: CreateAgentTeamInteraction) {
     return this.client.makeCall<AgentTeamInteraction>('/agent-team-interactions', 'POST', params);
+  }
+
+  public replyToAgentTeamInteraction(id: string, content: string) {
+    return this.client.makeCall<AgentTeamInteraction>(`/agent-team-interactions/${id}/reply`, 'POST', { content });
   }
 }

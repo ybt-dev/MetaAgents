@@ -8,8 +8,7 @@ export interface AgentTeamInteractionEntity {
   getTeamId(): string;
   getOrganizationId(): string;
   getCreatedById(): string | null | undefined;
-  getAdditionalDataRequested(): boolean | undefined;
-  getRepliesQueue(): string[];
+  getLockedTill(): string | Date | undefined | null;
   getCreatedAt(): Date;
   getUpdatedAt(): Date;
 }
@@ -33,20 +32,16 @@ export class MongoAgentTeamInteractionEntity implements AgentTeamInteractionEnti
     return this.document.organization.toString();
   }
 
-  public getAdditionalDataRequested() {
-    return this.document.additionalDataRequested;
-  }
-
-  public getRepliesQueue() {
-    return this.document.repliesQueue;
-  }
-
   public getCreatedById() {
     return this.document.createdBy?.toString();
   }
 
   public getCreatedAt() {
     return this.document.createdAt;
+  }
+
+  public getLockedTill(): string | Date | undefined | null {
+    return this.document.lockedTill;
   }
 
   public getUpdatedAt() {

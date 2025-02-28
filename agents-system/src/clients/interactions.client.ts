@@ -13,6 +13,7 @@ import { AgentsManager } from '../managers/agents.manager.ts';
 import { ConsumerFactory } from '../factories/consumer.factory.ts';
 import { PublisherFactory } from '../factories/publisher.factory.ts';
 import { IdGenerationHelper } from '../helpers/id-generation.helper.ts';
+import { AgentTeamInteractionsRepository } from '../repositories/agent-team-interactions.repository.ts';
 import PublisherName from '../enums/publisher-name.enum.ts';
 import ConsumerName from '../enums/consumer-name.enum.ts';
 import AgentTeamInteractionsEventType from '../enums/agent-team-interactions-event-type.enum.ts';
@@ -39,6 +40,8 @@ export type AgentCommunicationRequestedEvent = Event<
 
 export default class InteractionsClient {
   private CLIENT_SOURCE = 'interactions';
+  private readonly AUTO_LOCK_INTERVAL = 1000 * 20; // 20 seconds in ms
+  private readonly AUTO_LOCK_TIME = 1000 * 60; // 60 seconds in ms
 
   private consumer: Consumer;
   private publisher: Publisher;
@@ -48,6 +51,7 @@ export default class InteractionsClient {
     private consumerFactory: ConsumerFactory,
     private publisherFactory: PublisherFactory,
     private idGenerationHelper: IdGenerationHelper,
+    private agentTeamInteractionsRepository: AgentTeamInteractionsRepository,
   ) {}
 
   public async start() {
@@ -83,108 +87,133 @@ export default class InteractionsClient {
       return;
     }
 
-    await agent.runtime.ensureConnection(userId, interactionRoomId, senderName, senderName, this.CLIENT_SOURCE);
+    const stopLock = this.createInteractionAutoLock(interactionId);
 
-    const content: Content = {
-      text,
-      attachments: [],
-      source: this.CLIENT_SOURCE,
-      inReplyTo: inReplyTo ? stringToUuid(inReplyTo) : undefined,
-    };
+    try {
+      await agent.runtime.ensureConnection(userId, interactionRoomId, senderName, senderName, this.CLIENT_SOURCE);
 
-    const userMessage = {
-      content,
-      userId,
-      roomId: interactionRoomId,
-      agentId: agent.runtime.agentId,
-    };
+      const content: Content = {
+        text,
+        attachments: [],
+        source: this.CLIENT_SOURCE,
+        inReplyTo: inReplyTo ? stringToUuid(inReplyTo) : undefined,
+      };
 
-    const memoryId = stringToUuid(`${triggerMessageId}-${targetAgentId}`);
+      const userMessage = {
+        content,
+        userId,
+        roomId: interactionRoomId,
+        agentId: agent.runtime.agentId,
+      };
 
-    const existingMemory = await agent.runtime.messageManager.getMemoryById(memoryId);
+      const memoryId = stringToUuid(`${triggerMessageId}-${targetAgentId}`);
 
-    const memoryToUse = existingMemory ?? {
-      ...userMessage,
-      id: memoryId,
-      agentId: agent.runtime.agentId,
-      roomId: interactionRoomId,
-      userId,
-      content,
-      createdAt: Date.now(),
-    };
+      const existingMemory = await agent.runtime.messageManager.getMemoryById(memoryId);
 
-    if (!existingMemory) {
-      await this.createMemory(agent, memoryToUse);
-    }
+      const memoryToUse = existingMemory ?? {
+        ...userMessage,
+        id: memoryId,
+        agentId: agent.runtime.agentId,
+        roomId: interactionRoomId,
+        userId,
+        content,
+        createdAt: Date.now(),
+      };
 
-    const state = await agent.runtime.composeState(userMessage, {
-      agentName: agent.runtime.character.name,
-      interactionId,
-      triggerMessageId: memoryId,
-      systemMessage: agent.runtime.character.system,
-    });
+      if (!existingMemory) {
+        await this.createMemory(agent, memoryToUse);
+      }
 
-    const context = composeContext({ state, template: defaultInteractionsTemplate });
+      const state = await agent.runtime.composeState(userMessage, {
+        agentName: agent.runtime.character.name,
+        interactionId,
+        triggerMessageId: memoryId,
+        systemMessage: agent.runtime.character.system,
+      });
 
-    const response = await generateMessageResponse({
-      runtime: agent.runtime,
-      context,
-      modelClass: ModelClass.LARGE,
-    });
+      const context = composeContext({ state, template: defaultInteractionsTemplate });
 
-    const responseMessageId = this.idGenerationHelper.generateId();
+      const response = await generateMessageResponse({
+        runtime: agent.runtime,
+        context,
+        modelClass: ModelClass.LARGE,
+      });
 
-    const responseMessage = {
-      ...userMessage,
-      id: stringToUuid(responseMessageId),
-      userId: agent.runtime.agentId,
-      content: response,
-      embedding: getEmbeddingZeroVector(),
-      createdAt: Date.now(),
-    };
+      const responseMessageId = this.idGenerationHelper.generateId();
 
-    await this.createMemory(agent, responseMessage);
+      const responseMessage = {
+        ...userMessage,
+        id: stringToUuid(responseMessageId),
+        userId: agent.runtime.agentId,
+        content: response,
+        embedding: getEmbeddingZeroVector(),
+        createdAt: Date.now(),
+      };
 
-    const updatedState = await agent.runtime.updateRecentMessageState(state);
+      await this.createMemory(agent, responseMessage);
 
-    updatedState.responseMessageId = responseMessageId;
+      const updatedState = await agent.runtime.updateRecentMessageState(state);
 
-    let actionMessage: Content | null = null;
+      updatedState.responseMessageId = responseMessageId;
 
-    await agent.runtime.processActions(memoryToUse, [responseMessage], updatedState, async (newMessages) => {
-      actionMessage = newMessages;
+      let actionMessage: Content | null = null;
 
-      return [memoryToUse];
-    });
+      await agent.runtime.processActions(memoryToUse, [responseMessage], updatedState, async (newMessages) => {
+        actionMessage = newMessages;
 
-    const eventId = stringToUuid(`${triggerMessageId}-${targetAgentId}-reply`);
+        return [memoryToUse];
+      });
 
-    await agent.runtime.evaluate(memoryToUse, updatedState);
+      const eventId = stringToUuid(`${triggerMessageId}-${targetAgentId}-reply`);
 
-    await this.publisher.publish({
-      deduplicationId: eventId,
-      data: {
-        id: eventId,
-        type: AgentTeamInteractionsEventType.AgentCommunicationReplied,
-        category: AgentsEventCategory.AgentTeamInteractions,
-        userId: null,
-        createdAt: new Date(),
+      await agent.runtime.evaluate(memoryToUse, updatedState);
+
+      await this.publisher.publish({
+        deduplicationId: eventId,
         data: {
-          messageId: responseMessageId,
-          interactionId,
-          agentId: targetAgentId,
-          teamId: agent.configuration.teamId,
-          organizationId: agent.configuration.organizationId,
-          repliedToMessageId: triggerMessageId,
-          text: response.text ?? 'Unable to extract a response text',
-          actionText: actionMessage?.text ?? '',
+          id: eventId,
+          type: AgentTeamInteractionsEventType.AgentCommunicationReplied,
+          category: AgentsEventCategory.AgentTeamInteractions,
+          userId: null,
+          createdAt: new Date(),
+          data: {
+            messageId: responseMessageId,
+            interactionId,
+            agentId: targetAgentId,
+            teamId: agent.configuration.teamId,
+            organizationId: agent.configuration.organizationId,
+            repliedToMessageId: triggerMessageId,
+            text: response.text ?? 'Unable to extract a response text',
+            actionText: actionMessage?.text ?? '',
+          },
         },
-      },
-    });
+      });
+    } finally {
+      stopLock();
+    }
   }
 
   private async createMemory(agent: Agent, memory: Memory) {
     await agent.runtime.messageManager.addEmbeddingToMemory(memory);
     await agent.runtime.messageManager.createMemory(memory, false);
+  }
+
+  private createInteractionAutoLock(interactionId: string) {
+    let timeoutId: ReturnType<typeof setTimeout | null> = null;
+
+    const lock = async () => {
+      try {
+        await this.agentTeamInteractionsRepository.lockTeamInteraction(
+          interactionId,
+          new Date(Date.now() + this.AUTO_LOCK_TIME),
+        );
+      } finally {
+        timeoutId = setTimeout(lock, this.AUTO_LOCK_INTERVAL);
+      }
+    };
+
+    lock().then(() => {});
+
+    return () => clearTimeout(timeoutId);
   }
 }
