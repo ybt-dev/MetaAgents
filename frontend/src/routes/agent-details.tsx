@@ -26,7 +26,7 @@ const AgentDetails = () => {
       description: data.description,
       modelApiKey: data.modelApiKey,
       model: data.model,
-      twitterCookie: data.twitterCookie,
+      twitterAuthToken: data.twitterAuthToken,
       twitterUsername: data.twitterUsername,
       twitterPassword: data.twitterPassword,
       twitterEmail: data.twitterEmail,

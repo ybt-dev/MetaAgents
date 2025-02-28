@@ -13,7 +13,6 @@ import {
 import TwitterClientInterface from '@elizaos/client-twitter';
 import { AgentConfiguration } from '../types';
 import { Agent, AgentsStore } from '../stores/agents.store.ts';
-import { safeJsonParse } from '../utils/json.utils.ts';
 
 export interface AgentsManager {
   startAgent(character: Character, configuration: AgentConfiguration): Promise<Agent>;
@@ -50,13 +49,19 @@ export class DefaultAgentsManager implements AgentsManager {
 
       await runtime.initialize();
 
-      const cookies = runtime.getSetting('TWITTER_COOKIES');
+      const twitterAuthToken = runtime.getSetting('TWITTER_AUTH_TOKEN');
       const username = runtime.getSetting('TWITTER_USERNAME');
 
-      if (cookies) {
+      if (twitterAuthToken) {
         elizaLogger.log(`Reading cookies from SETTINGS...`);
 
-        await runtime.cacheManager.set(`twitter/${username}/cookies`, safeJsonParse(cookies));
+        await runtime.cacheManager.set(`twitter/${username}/cookies`, [
+          {
+            key: 'auth_token',
+            value: twitterAuthToken,
+            domain: '.twitter.com',
+          },
+        ]);
       }
 
       await this.initializeAgentClients(character, runtime);

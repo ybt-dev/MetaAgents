@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { BrowserRouter } from 'react-router';
 import { WalletWidgetProvider } from '@initia/react-wallet-widget';
+import { WidgetWallet } from '@initia/utils';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast, ToastContainer } from 'react-toastify';
 import { RestApiClient } from './api/ApiClient';
@@ -15,6 +16,10 @@ import AgentTeamInteractionsRestApi from './api/AgentTeamInteractionsApi';
 import InteractionMessagesRestApi from './api/InteractionMessagesApi.ts';
 
 import './tailwind.css';
+
+const filterWallet = (wallet: WidgetWallet) => {
+  return wallet.type === 'initia';
+};
 
 function App() {
   const queryClient = useMemo(() => {
@@ -52,7 +57,7 @@ function App() {
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <WalletWidgetProvider>
+        <WalletWidgetProvider filterWallet={filterWallet}>
           <ApiProvider value={services}>
             <AppInitializer>
               <Header />

@@ -26,7 +26,7 @@ export interface CreateAgentParams {
   modelApiKey: string;
   teamId: string;
   name: string;
-  twitterCookie?: string;
+  twitterAuthToken?: string;
   twitterUsername?: string;
   twitterPassword?: string;
   twitterEmail?: string;
@@ -37,7 +37,7 @@ export interface CreateAgentParams {
 export interface UpdateAgentParams {
   model?: AgentModel;
   modelApiKey?: string;
-  twitterCookie?: string;
+  twitterAuthToken?: string;
   twitterUsername?: string;
   twitterPassword?: string;
   twitterEmail?: string;
@@ -126,7 +126,7 @@ export class DefaultAgentService implements AgentService {
         model: params.model,
         modelApiKey: params.modelApiKey,
         config: {
-          twitterCookie: params.twitterCookie,
+          twitterAuthToken: params.twitterAuthToken,
           twitterUsername: params.twitterUsername,
           twitterPassword: params.twitterUsername,
           twitterEmail: params.twitterEmail,
@@ -158,7 +158,7 @@ export class DefaultAgentService implements AgentService {
         ...(params.modelApiKey ? { modelApiKey: params.modelApiKey } : {}),
         ...(params.description !== undefined ? { description: params.description } : {}),
         config: {
-          twitterCookie: params.twitterCookie ?? (existingAgent.config.twitterCookie as string | undefined),
+          twitterAuthToken: params.twitterAuthToken ?? (existingAgent.config.twitterAuthToken as string | undefined),
           twitterUsername: params.twitterUsername ?? (existingAgent.config.twitterUsername as string | undefined),
           twitterPassword: params.twitterPassword ?? (existingAgent.config.twitterPassword as string | undefined),
           twitterEmail: params.twitterEmail ?? (existingAgent.config.twitterEmail as string | undefined),
