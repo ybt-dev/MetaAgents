@@ -65,8 +65,8 @@ jobs:
       SERVICE_TYPE: eliza
       APP_NAME: meta-agents
       LAUNCH_TYPE: FARGATE
-      DOCKERFILE_PATH: ./eliza-starter/Dockerfile
-      DOCKER_CONTEXT: ./eliza-starter
+      DOCKERFILE_PATH: ./agents-system/Dockerfile
+      DOCKER_CONTEXT: ./agents-system
       TASK_DEFINITION_PATH: ./.ecs/eliza-definition.json
       AWS_SECRETS_LIST: |
         MONGODB_URL
@@ -82,6 +82,7 @@ jobs:
         BACKEND_URL
         TOGETHER_API_KEY
         AWS_S3_BUCKET
+        PORT
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
