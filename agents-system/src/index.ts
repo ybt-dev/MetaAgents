@@ -1,3 +1,4 @@
+import express, { Request, Response } from 'express';
 import { MongoClient } from 'mongodb';
 import { MongoDBDatabaseAdapter } from '@elizaos/adapter-mongodb';
 import { elizaLogger } from '@elizaos/core';
@@ -31,6 +32,18 @@ const initializeDatabaseClient = () => {
   const DATABASE_URL = process.env.MONGODB_URL || '';
 
   return new MongoClient(DATABASE_URL);
+};
+
+const initializeHealthCheckApi = () => {
+  const app = express();
+
+  app.get('/health', (request: Request, response: Response) => response.send('OK'));
+
+  const port = process.env.PORT || 3000;
+
+  app.listen(port, () => {
+    elizaLogger.info(`Health check API started on port ${port}`);
+  });
 };
 
 const loadCharacters = async (
@@ -100,6 +113,9 @@ const initializeAgentsSystem = async () => {
   );
 
   const agentsControlService = new DefaultAgentsControlService(sqsConsumerFactory, characterFactory, agentsManager);
+
+  elizaLogger.info('Starting health check API...');
+  initializeHealthCheckApi();
 
   await interactionsClient.start();
   await agentsControlService.start();
