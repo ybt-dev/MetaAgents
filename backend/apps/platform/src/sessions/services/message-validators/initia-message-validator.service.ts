@@ -11,9 +11,12 @@ export class InitiaMessageValidatorService implements MessageValidatorService {
     const ec = new elliptic.ec('secp256k1');
     const key = ec.keyFromPublic(publicKey, 'hex');
 
-    const msgHash = createHash('sha256').update(message).toString();
+    const msgHash = createHash('sha256').update(message).digest('hex');
 
-    const success = key.verify(msgHash, decodedSignature);
+    const success = key.verify(msgHash, {
+      r: decodedSignature.slice(0, 32).toString('hex'),
+      s: decodedSignature.slice(32, 64).toString('hex'),
+    });
 
     const address = this.getBech32Address(stringPublicKey);
 

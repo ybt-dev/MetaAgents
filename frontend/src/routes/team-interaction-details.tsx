@@ -6,6 +6,7 @@ import useListLatestInteractionMessagesQuery from '@/hooks/queries/useListLatest
 import useAgentTeamInteractionByIdQuery from '@/hooks/queries/useAgentTeamInteractionByIdQuery';
 import InteractionMessagesList from '@/components/InteractionMessagesList';
 import Skeleton from '@/components/Skeleton';
+import TypingIndicator from '@/components/TypingIndicator';
 import useListAgentsByTeamIdQuery from '@/hooks/queries/useListAgentsByTeamIdQuery';
 
 const TeamInteractionDetails = () => {
@@ -50,6 +51,7 @@ const TeamInteractionDetails = () => {
       </Link>
       <div className="flex flex-col gap-6 mb-4">{renderMessageDetails()}</div>
       <InteractionMessagesList agentsPool={agentsPool} messages={messages ?? null} />
+      {messages && !!messages.length && <TypingIndicator className="mt-8" />}
       {messages && !messages.length && <p className="text-white">No messages found.</p>}
     </div>
   );

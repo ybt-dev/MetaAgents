@@ -34,12 +34,18 @@ export class SqsConsumerFactory implements ConsumerFactory {
         const deduplicationId =
           message.MessageAttributes?.[this.DEDUPLICATION_ID_MESSAGE_ATTRIBUTE_NAME]?.StringValue || messageId;
 
-        return handleMessage({
-          messageId,
-          payload: JSON.parse(message.Body),
-          correlationId,
-          deduplicationId,
-        });
+        try {
+          return await handleMessage({
+            messageId,
+            payload: JSON.parse(message.Body),
+            correlationId,
+            deduplicationId,
+          });
+        } catch (error) {
+          console.error(`Error handling message with ID: ${messageId}`, error);
+
+          throw error;
+        }
       },
     });
 

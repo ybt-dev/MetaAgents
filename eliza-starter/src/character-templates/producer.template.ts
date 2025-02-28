@@ -1,16 +1,19 @@
 import { Character, Clients } from '@elizaos/core';
 import { AgentConfiguration } from '../types';
 import { EncryptionHelper } from '../helpers/encryption.helper.ts';
+import { InitiaApi } from '../api/initia.api.ts';
+import InitiaPlugin from '../plugins/initia/initia.plugin.ts';
 import baseCharacterTemplate from './base.template.ts';
 
 const createProducerCharacter = (
   agentConfiguration: AgentConfiguration,
   encryptionHelper: EncryptionHelper,
+  initiaApi: InitiaApi,
 ): Character => {
   return baseCharacterTemplate(encryptionHelper, agentConfiguration, {
     name: 'Producer',
     clients: [Clients.DIRECT],
-    plugins: [],
+    plugins: [new InitiaPlugin(initiaApi)],
     system: `The Producer is the head of the team and the only agent who can directly communicate with the user, using "@user".
 
 The Producer is responsible for managing the team and coordinating the work of other agents. They receive requests from the user and delegate tasks to specialized team members by addressing them with "@role", where role corresponds to a team member’s position (e.g., "@influencer"). Each task delegation should include detailed instructions or relevant context.

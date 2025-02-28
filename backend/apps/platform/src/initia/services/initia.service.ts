@@ -1,6 +1,7 @@
+import { keyBy } from 'lodash';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { RESTClient, Wallet, MsgSend, MsgExecute, bcs, RawKey, WaitTxBroadcastResult } from '@initia/initia.js';
+import { RESTClient, Wallet, MsgSend, MsgExecute, bcs, RawKey, Event } from '@initia/initia.js';
 import { InjectEncryptionHelper } from '@libs/encryption/decorators';
 import { EncryptionHelper } from '@libs/encryption/helpers';
 
@@ -9,19 +10,8 @@ export interface WalletBalance {
   denom: string;
 }
 
-export interface TransactionLog {
-  events: Array<{
-    type: string;
-    attributes: Array<{
-      key: string;
-      value: string;
-    }>;
-  }>;
-}
-
 export interface TransactionResult {
   transactionId: string;
-  logs: TransactionLog[];
 }
 
 export interface SendTxParams {
@@ -33,7 +23,6 @@ export interface SendTxParams {
 
 export interface CreateNftCollectionParams {
   encryptedPrivateKey: string;
-  destinationAddress: string;
   name: string;
   description: string;
   uri: string;
@@ -41,10 +30,14 @@ export interface CreateNftCollectionParams {
   royalty: number;
 }
 
+export interface CreateNftCollectionTransactionResult extends TransactionResult {
+  collectionId?: string;
+}
+
 export interface InitiaService {
   getWalletBalance(walletAddress: string): Promise<WalletBalance>;
   sendTx(params: SendTxParams): Promise<TransactionResult>;
-  createNftCollection(params: CreateNftCollectionParams): Promise<TransactionResult>;
+  createNftCollection(params: CreateNftCollectionParams): Promise<CreateNftCollectionTransactionResult>;
 }
 
 @Injectable()
@@ -52,8 +45,13 @@ export class DefaultInitiaService implements InitiaService {
   private readonly INITIA_DENOM = 'uinit';
   private readonly NFT_MODULE_NAME = 'metaAgents_nft_module';
   private readonly NFT_MODULE_CREATE_COLLECTION_METHOD = 'create_collection';
+  private readonly MOVE_EVENT_TYPE = 'move';
+  private readonly NFT_CONTRACT_TYPE_TAG_KEY = 'type_tag';
+  private readonly NFT_CONTRACT_DATA_TAG_KEY = 'data';
+  private readonly CREATE_COLLECTION_TYPE_TAG_VALUE = '0x1::collection::CreateCollectionEvent';
 
   private readonly WALLET_ENCRYPTION_SECRET_KEY: string;
+  private readonly NFT_CONTRACT_ADDRESS: string;
 
   constructor(
     private readonly client: RESTClient,
@@ -61,6 +59,7 @@ export class DefaultInitiaService implements InitiaService {
     private readonly configService: ConfigService,
   ) {
     this.WALLET_ENCRYPTION_SECRET_KEY = this.configService.getOrThrow<string>('WALLET_ENCRYPTION_SECRET_KEY');
+    this.NFT_CONTRACT_ADDRESS = this.configService.getOrThrow<string>('NFT_CONTRACT_ADDRESS');
   }
 
   public async getWalletBalance(walletAddress: string) {
@@ -81,7 +80,9 @@ export class DefaultInitiaService implements InitiaService {
 
     const result = await this.client.tx.broadcast(signedTx);
 
-    return this.mapBroadcastResultToTransactionResult(result);
+    return {
+      transactionId: result.txhash,
+    };
   }
 
   public async createNftCollection(params: CreateNftCollectionParams) {
@@ -89,7 +90,7 @@ export class DefaultInitiaService implements InitiaService {
 
     const msg = new MsgExecute(
       wallet.key.accAddress,
-      params.destinationAddress,
+      this.NFT_CONTRACT_ADDRESS,
       this.NFT_MODULE_NAME,
       this.NFT_MODULE_CREATE_COLLECTION_METHOD,
       undefined,
@@ -105,8 +106,12 @@ export class DefaultInitiaService implements InitiaService {
     const signedTx = await wallet.createAndSignTx({ msgs: [msg] });
 
     const result = await this.client.tx.broadcast(signedTx);
+    const transactionInfo = await this.client.tx.txInfo(result.txhash);
 
-    return this.mapBroadcastResultToTransactionResult(result);
+    return {
+      transactionId: result.txhash,
+      collectionId: this.getCollectionIdFromEvents(transactionInfo.events),
+    };
   }
 
   private getWalletFromPrivateKey(encryptedPrivateKey: string) {
@@ -115,12 +120,22 @@ export class DefaultInitiaService implements InitiaService {
     return new Wallet(this.client, RawKey.fromHex(decryptedPrivateKey));
   }
 
-  private mapBroadcastResultToTransactionResult(broadcastResult: WaitTxBroadcastResult) {
-    return {
-      transactionId: broadcastResult.txhash,
-      logs: broadcastResult.logs.map((log) => ({
-        events: log.events,
-      })),
-    };
+  private getCollectionIdFromEvents(events: Event[]) {
+    for (const event of events) {
+      if (event.type === this.MOVE_EVENT_TYPE) {
+        const composedAttributes = keyBy(event.attributes, 'key');
+
+        const typeTag = composedAttributes[this.NFT_CONTRACT_TYPE_TAG_KEY]?.value;
+        const data = composedAttributes[this.NFT_CONTRACT_DATA_TAG_KEY]?.value;
+
+        if (typeTag === this.CREATE_COLLECTION_TYPE_TAG_VALUE && data) {
+          const parsedData = JSON.parse(data);
+
+          return parsedData.collection;
+        }
+      }
+    }
+
+    return undefined;
   }
 }
