@@ -25,8 +25,8 @@ interface CollectionInfo {
 }
 
 export default class GenerateNftCollectionAction implements Action {
-  public name = 'GENERATE_COLLECTION';
-  public description = 'Generate an NFT collection on Initia';
+  public name = 'CREATE_NFT_COLLECTION';
+  public description = 'Create and deploy an NFT collection on Initia';
 
   public similes = [
     'COLLECTION_GENERATION',
@@ -40,22 +40,20 @@ export default class GenerateNftCollectionAction implements Action {
     [
       {
         user: '{{agentName}}',
-        content: { text: 'Generate a collection on Initia' },
+        content: { text: 'Create a NFT collection' },
       },
       {
         user: '{{agentName}}',
         content: {
-          text: "Here's your new NFT collection on Initia.",
-          action: 'GENERATE_COLLECTION',
+          text: "Here's your new NFT collection.",
+          action: 'CREATE_NFT_COLLECTION',
         },
       },
     ],
   ];
 
-  private readonly WASM_EVENT_TYPE = 'wasm';
-  private readonly COLLECTION_ID_ATTRIBUTE = 'collection_id';
-  private readonly METADATA_IMAGE_WIDTH = 300;
-  private readonly METADATA_IMAGE_HEIGHT = 300;
+  private readonly METADATA_IMAGE_WIDTH = 320;
+  private readonly METADATA_IMAGE_HEIGHT = 320;
 
   constructor(private initiaApi: InitiaApi) {}
 
@@ -79,13 +77,15 @@ export default class GenerateNftCollectionAction implements Action {
         text:
           `Collection created successfully! 🎉\n` +
           `Transaction ID: ${result.transactionId}\n` +
-          `Collection ID: ${result.collectionId}\n` +
+          `Collection ID: ${result.collectionId || 'unknown'}\n` +
           `View on Explorer: https://scan.testnet.initia.xyz/initiation-2/tx/${result.transactionId}`,
         attachments: [],
       });
 
       return true;
     } catch (error) {
+      console.error('Failed to generate collection:', error.message);
+
       await callback?.({
         text: `Failed to generate collection: ${error.message}`,
         attachments: [],
@@ -107,37 +107,20 @@ export default class GenerateNftCollectionAction implements Action {
 
     // todo add check for format of object
 
-    const royaltyBasisPoints = Math.floor(content.royaltyPercentage * 100);
-
     const metadataUrl = await this.generateCollectionMetadata(runtime, state, content.name);
 
     if (!metadataUrl) {
       throw new Error('Failed to generate collection metadata.');
     }
 
-    const transactionResult = await this.initiaApi.createNftCollection({
+    return this.initiaApi.createNftCollection({
       name: content.name,
       description: content.description,
       encryptedPrivateKey: runtime.getSetting(AgentSettingsKey.InitiaEncryptedPrivateKey),
       uri: metadataUrl,
       maxSupply: content.maxSupply,
-      royalty: royaltyBasisPoints,
+      royalty: Math.max(0, Math.min(100, content.royaltyPercentage)),
     });
-
-    const [firstTransactionLog] = transactionResult.logs;
-
-    const wasmEvent = firstTransactionLog.events?.find((event) => {
-      return event.type === this.WASM_EVENT_TYPE;
-    });
-
-    const collectionId = wasmEvent.attributes?.find((attribute) => {
-      return attribute.key === this.COLLECTION_ID_ATTRIBUTE;
-    })?.value;
-
-    return {
-      transactionId: transactionResult.transactionId,
-      collectionId,
-    };
   }
 
   private async generateCollectionMetadata(runtime: IAgentRuntime, state: State, collectionName: string) {
@@ -159,13 +142,13 @@ export default class GenerateNftCollectionAction implements Action {
 
     if (generationResult.success && generationResult.data && generationResult.data.length > 0) {
       const [image] = generationResult.data;
-      const filename = 'collection-image';
+      const filename = `${collectionName}.png`;
 
       const filepath = image.startsWith('http')
         ? await saveHeuristImage(image, filename)
         : saveBase64Image(image, filename);
 
-      const logoPath = await awsS3Service.uploadFile(filepath, `/${collectionName}`, false);
+      const logoPath = await awsS3Service.uploadFile(filepath, collectionName, false);
 
       const jsonFilePath = await awsS3Service.uploadJson(
         {
@@ -174,8 +157,12 @@ export default class GenerateNftCollectionAction implements Action {
           image: logoPath.url,
         },
         'metadata.json',
-        `${collectionName}`,
+        collectionName,
       );
+
+      if (jsonFilePath.error) {
+        throw new Error(`Failed to upload json metadata: ${jsonFilePath.error}`);
+      }
 
       return jsonFilePath.success ? jsonFilePath.url : null;
     }

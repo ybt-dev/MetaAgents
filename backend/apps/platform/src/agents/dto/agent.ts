@@ -15,6 +15,7 @@ export interface AgentDto {
   createdAt: Date;
   updatedAt: Date;
   walletAddress: string;
+  encryptedPrivateKey: string;
   description?: string;
   imageUrl?: string;
   createdById?: string | null;

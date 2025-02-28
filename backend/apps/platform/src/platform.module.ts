@@ -50,6 +50,7 @@ import {
         AWS_SECRET_ACCESS_KEY: Joi.string().required(),
         SNS_BASE_ARN: Joi.string().required(),
         SQS_BASE_URL: Joi.string().required(),
+        NFT_CONTRACT_ADDRESS: Joi.string().required(),
         INITIA_NODE_URL: Joi.string().optional().default('https://lcd.initiation-2.initia.xyz/'),
         INITIA_CHAIN_ID: Joi.string().optional().default('initiation-2'),
       }),
@@ -110,22 +111,22 @@ import {
 
             const config = [
               {
-                topicArn: `${SNS_BASE_ARN}:agent-communication-requests`,
+                topicArn: `${SNS_BASE_ARN}:test-agent-communication-requests`,
                 eventType: AgentTeamInteractionsEventType.AgentCommunicationRequested,
                 eventCategory: AgentsEventCategory.AgentTeamInteractions,
               },
               {
-                topicArn: `${SNS_BASE_ARN}:agent-creation`,
+                topicArn: `${SNS_BASE_ARN}:test-agent-creation`,
                 eventType: AgentEventType.AgentCreated,
                 eventCategory: AgentsEventCategory.Agents,
               },
               {
-                topicArn: `${SNS_BASE_ARN}:agent-deletes`,
+                topicArn: `${SNS_BASE_ARN}:test-agent-deletes`,
                 eventType: AgentEventType.AgentDeleted,
                 eventCategory: AgentsEventCategory.Agents,
               },
               {
-                topicArn: `${SNS_BASE_ARN}:agent-updates`,
+                topicArn: `${SNS_BASE_ARN}:test-agent-updates`,
                 eventType: AgentEventType.AgentUpdated,
                 eventCategory: AgentsEventCategory.Agents,
               },
@@ -158,7 +159,7 @@ import {
         return [
           {
             name: AgentsConsumerName.AgentCommunicationReplies,
-            queueUrl: `${sqsBaseUrl}/meta-agents-communication-replies-processing`,
+            queueUrl: `${sqsBaseUrl}/test-meta-agents-communication-replies-processing`,
           },
         ];
       },

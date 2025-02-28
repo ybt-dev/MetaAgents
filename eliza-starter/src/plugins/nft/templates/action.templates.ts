@@ -7,21 +7,22 @@ export const generateNftCollectionTemplate = `Given the recent messages and wall
 Extract the following information about the requested NFT collection:
 - name: The name of the NFT collection.
 - description: A brief description of the NFT collection.
+- symbol: The symbol of the NFT collection.
 - maxSupply: The maximum number of NFTs in the collection.
-- royaltyPercentage: The royalty percentage (as a number) that the creator will receive from secondary sales.
+- royaltyPercentage: The royalty percentage (as a number) that the creator will receive from secondary sales. (from 0 to 100)
 
 Respond with a JSON markdown block containing only the extracted values. All fields are required:
 
-\`\`\`json
 {
     "name": "COLLECTION_NAME",
     "description": "COLLECTION_DESCRIPTION",
+    "symbol": "COLLECTION_SYMBOL",
     "maxSupply": MAX_SUPPLY,
     "royaltyPercentage": ROYALTY_PERCENTAGE
 }
-\`\`\`
 
 Note: Ensure that the name and description are accurately extracted based on the provided messages and wallet information.
+Do not put json markdown block in response. Your message should be parseable via JSON.parse() function.
 `;
 
 export const generateNftCollectionImageTemplate = `Given the recent messages and wallet information below:
@@ -45,16 +46,15 @@ Extract the following information about the NFT to be minted:
 
 Respond with a JSON markdown block containing only the extracted values. All fields are required:
 
-\`\`\`json
 {
     "collectionName": "COLLECTION_NAME",
     "description": "NFT_DESCRIPTION",
     "tokenId": "UNIQUE_TOKEN_ID",
     "recipient": "RECIPIENT_ADDRESS"
 }
-\`\`\`
 
-Note: Ensure that the collection name exists and the recipient address is valid. The tokenId should be unique and descriptive.
+Note: Ensure that the name and description are accurately extracted based on the provided messages and wallet information.
+Do not put json markdown block in response. Your message should be parseable via JSON.parse() function.
 `;
 
 export const generateNftItemImageTemplate = `Given the recent messages and wallet information below:

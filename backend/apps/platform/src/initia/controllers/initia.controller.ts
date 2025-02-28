@@ -25,7 +25,6 @@ export class InitiaController {
   @Post('create-collection')
   public createNftCollection(@Body() body: CreateNftCollectionDto) {
     return this.initiaService.createNftCollection({
-      destinationAddress: body.destinationAddress,
       name: body.name,
       description: body.description,
       uri: body.uri,
@@ -39,7 +38,6 @@ export class InitiaController {
   public mintNft(@Body() body: MintNftDto) {
     return this.initiaService.mintNft({
       encryptedPrivateKey: body.encryptedPrivateKey,
-      destinationAddress: body.destinationAddress,
       collectionName: body.collectionName,
       description: body.description,
       tokenId: body.tokenId,
