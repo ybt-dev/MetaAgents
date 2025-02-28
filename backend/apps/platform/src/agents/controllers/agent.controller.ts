@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards, Delete } from '@nestjs/common';
 import { Session } from '@apps/platform/sessions/decorators';
 import { SessionData } from '@apps/platform/sessions/types';
 import { SessionGuard } from '@apps/platform/sessions/guards';
@@ -52,5 +52,10 @@ export default class AgentController {
       twitterEmail: body.twitterEmail,
       updatedById: session.userId,
     });
+  }
+
+  @Delete('/:id')
+  public deleteAgent(@Session() session: SessionData, @Param('id') id: string) {
+    return this.agentService.delete(id, session.organizationId);
   }
 }

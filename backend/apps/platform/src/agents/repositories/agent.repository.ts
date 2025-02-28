@@ -49,6 +49,7 @@ export interface AgentRepository {
   findByIdAndOrganizationId(id: string, organizationId: string): Promise<AgentEntity | null>;
   createOne(params: CreateAgentEntityParams): Promise<AgentEntity>;
   updateOneById(id: string, params: UpdateAgentEntityParams): Promise<AgentEntity | null>;
+  deleteOneById(id: string): Promise<void>;
 }
 
 @Injectable()
@@ -122,6 +123,19 @@ export class MongoAgentRepository implements AgentRepository {
       .exec();
 
     return agent && new MongoAgentEntity(agent);
+  }
+
+  public async deleteOneById(id: string) {
+    await this.agentModel
+      .deleteOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          session: this.transactionsManager.getCurrentTransaction()?.getSession(),
+        },
+      )
+      .exec();
   }
 
   private mapFilterToQuery(filter: IFindAgentTeamFilter) {

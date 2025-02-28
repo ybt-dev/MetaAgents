@@ -16,7 +16,11 @@ import {
 import { AgentDto } from '@apps/platform/agents/dto';
 import { AgentEntityToDtoMapper } from '@apps/platform/agents/entities-mappers';
 import { AgentModel, AgentRole } from '@apps/platform/agents/enums';
-import { generateAgentCreatedEvent, generateAgentUpdatedEvent } from '@apps/platform/agents/utils';
+import {
+  generateAgentCreatedEvent,
+  generateAgentUpdatedEvent,
+  generateAgentDeletedEvent,
+} from '@apps/platform/agents/utils';
 import { AgentWalletGeneratorService } from './agent-wallet-generator.service';
 
 export interface CreateAgentParams {
@@ -52,6 +56,7 @@ export interface AgentService {
   getIfExist(id: string, organizationId: string): Promise<AgentDto>;
   create(params: CreateAgentParams): Promise<AgentDto>;
   update(id: string, organizationId: string, params: UpdateAgentParams): Promise<AgentDto>;
+  delete(id: string, organizationId: string): Promise<AgentDto>;
 }
 
 @Injectable()
@@ -175,6 +180,18 @@ export class DefaultAgentService implements AgentService {
       await this.eventsService.create(generateAgentUpdatedEvent(existingAgent, updatedAgent));
 
       return updatedAgent;
+    });
+  }
+
+  public async delete(id: string, organizationId: string) {
+    return this.transactionsManager.useTransaction(async () => {
+      const existingAgent = await this.getIfExist(id, organizationId);
+
+      await this.agentRepository.deleteOneById(id);
+
+      await this.eventsService.create(generateAgentDeletedEvent(existingAgent));
+
+      return existingAgent;
     });
   }
 }

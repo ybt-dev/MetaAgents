@@ -11,6 +11,10 @@ export interface AgentUpdatedEventData {
   object: AgentDto;
 }
 
+export interface AgentDeletedEventData {
+  object: AgentDto;
+}
+
 export interface AgentCommunicationRequestedEventData {
   triggerMessageId: string;
   targetAgentId: string;
