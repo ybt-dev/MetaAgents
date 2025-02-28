@@ -24,7 +24,7 @@ const EditAgentForm = ({ agent, onCancel, onSubmit }: EditAgentFormProps) => {
         model: agent.model,
         modelApiKey: agent.modelApiKey,
         twitterUsername: (agent.config.twitterUsername as string) || '',
-        twitterCookie: (agent.config.twitterCookie as string) || '',
+        twitterAuthToken: (agent.config.twitterAuthToken as string) || '',
         twitterEmail: (agent.config.twitterEmail as string) || '',
         twitterPassword: (agent.config.twitterPassword as string) || '',
       }}

@@ -55,7 +55,7 @@ export class CreateAgentBodyDto {
 
   @IsOptional()
   @IsString()
-  twitterCookie?: string;
+  twitterAuthToken?: string;
 
   @IsOptional()
   @IsString()
@@ -87,7 +87,7 @@ export class UpdateAgentBodyDto {
 
   @IsOptional()
   @IsString()
-  twitterCookie?: string;
+  twitterAuthToken?: string;
 
   @IsOptional()
   @IsString()

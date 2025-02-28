@@ -116,17 +116,17 @@ import {
                 eventCategory: AgentsEventCategory.AgentTeamInteractions,
               },
               {
-                topicArn: `${SNS_BASE_ARN}test-agent-creation`,
+                topicArn: `${SNS_BASE_ARN}agent-creation`,
                 eventType: AgentEventType.AgentCreated,
                 eventCategory: AgentsEventCategory.Agents,
               },
               {
-                topicArn: `${SNS_BASE_ARN}test-agent-deletes`,
+                topicArn: `${SNS_BASE_ARN}agent-deletes`,
                 eventType: AgentEventType.AgentDeleted,
                 eventCategory: AgentsEventCategory.Agents,
               },
               {
-                topicArn: `${SNS_BASE_ARN}test-agent-updates`,
+                topicArn: `${SNS_BASE_ARN}agent-updates`,
                 eventType: AgentEventType.AgentUpdated,
                 eventCategory: AgentsEventCategory.Agents,
               },

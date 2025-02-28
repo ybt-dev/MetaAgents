@@ -30,7 +30,7 @@ export interface CreateAgentParams {
   teamId: string;
   model: string;
   modelApiKey: string;
-  twitterCookie?: string;
+  twitterAuthToken?: string;
   twitterPassword?: string;
   twitterEmail?: string;
   twitterUsername?: string;
@@ -42,7 +42,7 @@ export interface UpdateAgentParams {
   model?: string;
   modelApiKey?: string;
   description?: string;
-  twitterCookie?: string;
+  twitterAuthToken?: string;
   twitterUsername?: string;
   twitterPassword?: string;
   twitterEmail?: string;

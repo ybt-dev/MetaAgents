@@ -12,6 +12,7 @@
   "dependencies": {
     "@initia/initia.js": "^0.2.29",
     "@initia/react-wallet-widget": "^0.200.0",
+    "@initia/utils": "^0.123.0",
     "@initia/wallet-widget": "^0.200.0",
     "@tailwindcss/vite": "^4.0.4",
     "@tanstack/react-query": "^5.66.0",

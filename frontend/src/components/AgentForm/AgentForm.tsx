@@ -8,7 +8,7 @@ export interface AgentFormData {
   description: string;
   model: AgentModelProvider;
   modelApiKey: string;
-  twitterCookie?: string;
+  twitterAuthToken?: string;
   twitterUsername?: string;
   twitterPassword?: string;
   twitterEmail?: string;
@@ -39,7 +39,7 @@ const AgentForm = ({
   const [description, setDescription] = useState(initialData?.description || '');
   const [model, setModel] = useState(initialData?.model || '');
   const [modelApiKey, setModelApiKey] = useState(initialData?.modelApiKey || '');
-  const [twitterCookie, setTwitterCookie] = useState(initialData?.twitterCookie || '');
+  const [twitterAuthToken, setTwitterAuthToken] = useState(initialData?.twitterAuthToken || '');
   const [twitterUsername, setTwitterUsername] = useState(initialData?.twitterUsername || '');
   const [twitterPassword, setTwitterPassword] = useState(initialData?.twitterPassword || '');
   const [twitterEmail, setTwitterEmail] = useState(initialData?.twitterEmail || '');
@@ -54,7 +54,7 @@ const AgentForm = ({
       description,
       model: model as AgentModelProvider,
       modelApiKey,
-      twitterCookie,
+      twitterAuthToken,
       twitterUsername,
       twitterEmail,
       twitterPassword,
@@ -154,15 +154,15 @@ const AgentForm = ({
           ) : null}
           {role === AgentRole.Adviser || role === AgentRole.Influencer ? (
             <div>
-              <label htmlFor="twitterCookie" className="block text-sm font-medium text-gray-400">
-                Twitter Cookie
+              <label htmlFor="twitterAuthToken" className="block text-sm font-medium text-gray-400">
+                Twitter Auth Token
               </label>
               <input
                 type="text"
-                id="twitterCookie"
-                name="twitterCookie"
-                value={twitterCookie}
-                onChange={(event) => setTwitterCookie(event.target.value)}
+                id="twitterAuthToken"
+                name="twitterAuthToken"
+                value={twitterAuthToken}
+                onChange={(event) => setTwitterAuthToken(event.target.value)}
                 className="mt-1 block w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-gray-100 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -221,7 +221,7 @@ const AgentForm = ({
           description,
           model: model as AgentModelProvider,
           modelApiKey,
-          twitterCookie,
+          twitterAuthToken,
           twitterUsername,
         })}
 
