@@ -27,7 +27,6 @@ export interface CreateAgentTeamInteractionParams {
 }
 
 export interface SendReplyMessageToInteractionParams {
-  replyMessageId: string;
   interactionId: string;
   organizationId: string;
   createdById?: string;
@@ -39,11 +38,13 @@ export interface AgentTeamInteractionService {
   get(id: string, organizationId: string): Promise<AgentTeamInteractionDto | null>;
   getIfExist(id: string, organizationId: string): Promise<AgentTeamInteractionDto>;
   create(params: CreateAgentTeamInteractionParams): Promise<AgentTeamInteractionDto>;
-  sendReplyMessage(params: SendReplyMessageToInteractionParams): Promise<void>;
+  sendReplyMessage(params: SendReplyMessageToInteractionParams): Promise<AgentTeamInteractionDto>;
 }
 
 @Injectable()
 export class DefaultAgentTeamInteractionService implements AgentTeamInteractionService {
+  private readonly DEFAULT_LOCK_TIME = 1000 * 60; // 1 minute in ms
+
   constructor(
     @InjectAgentTeamInteractionRepository()
     private readonly agentTeamInteractionRepository: AgentTeamInteractionRepository,
@@ -106,6 +107,7 @@ export class DefaultAgentTeamInteractionService implements AgentTeamInteractionS
         team: params.teamId,
         organization: params.organizationId,
         createdBy: params.createdById,
+        lockedTill: new Date(Date.now() + this.DEFAULT_LOCK_TIME),
       });
 
       const agentTeamInteraction = this.agentTeamInteractionEntityToDtoMapper.mapOne(entity);
@@ -133,8 +135,12 @@ export class DefaultAgentTeamInteractionService implements AgentTeamInteractionS
     return this.transactionsManager.useTransaction(async () => {
       const interaction = await this.getIfExist(params.interactionId, params.organizationId);
 
-      if (!interaction.repliesQueue.includes(params.replyMessageId)) {
-        throw new UnprocessableEntityException('Message is not in the replies queue.');
+      const currentTimestamp = Date.now();
+
+      const hasLock = !!interaction.lockedTill && new Date(interaction.lockedTill).getTime() > currentTimestamp;
+
+      if (hasLock) {
+        throw new UnprocessableEntityException('Current interaction is locked for replies.');
       }
 
       const [producerAgent] = await this.agentService.listForTeam(interaction.teamId, params.organizationId, [
@@ -154,12 +160,19 @@ export class DefaultAgentTeamInteractionService implements AgentTeamInteractionS
           id: params.createdById ?? interaction.id,
           type: InteractionMessageActorType.User,
         },
-        repliedToMessageId: params.replyMessageId,
       });
 
-      await this.agentTeamInteractionRepository.removeMessageIdFromRepliesQueue(interaction.id, params.replyMessageId);
+      const updatedInteraction = await this.agentTeamInteractionRepository.updateOneById(interaction.id, {
+        lockedTill: new Date(Date.now() + this.DEFAULT_LOCK_TIME),
+      });
+
+      if (!updatedInteraction) {
+        throw new NotFoundException(`Agent team interaction with id ${params.interactionId} not found`);
+      }
 
       await this.eventsService.create(generateAgentCommunicationRequestedEvent(interaction, message, producerAgent.id));
+
+      return this.agentTeamInteractionEntityToDtoMapper.mapOne(updatedInteraction);
     });
   }
 }

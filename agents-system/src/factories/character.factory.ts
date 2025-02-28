@@ -6,7 +6,6 @@ import AgentRole from '../enums/agent-role.enum.ts';
 import { InitiaApi } from '../api/initia.api.ts';
 import { EncryptionHelper } from '../helpers/encryption.helper.ts';
 import { AgentConfigurationsRepository } from '../repositories/agent-configurations.repository.ts';
-import { AgentTeamInteractionsRepository } from '../repositories/agent-team-interactions.repository.ts';
 import { AgentsManager } from '../managers/agents.manager.ts';
 import { PublisherFactory } from './publisher.factory.ts';
 import InteractionsPlugin from '../plugins/interactions/interactions.plugin.ts';
@@ -30,7 +29,6 @@ export interface CharacterFactory {
 export class DefaultCharacterFactory implements CharacterFactory {
   constructor(
     private agentConfigurationsRepository: AgentConfigurationsRepository,
-    private agentTeamInteractionsRepository: AgentTeamInteractionsRepository,
     private agentsManager: AgentsManager,
     private publisherFactory: PublisherFactory,
     private encryptionHelper: EncryptionHelper,
@@ -55,7 +53,6 @@ export class DefaultCharacterFactory implements CharacterFactory {
         createNodePlugin(),
         new InteractionsPlugin(
           this.agentConfigurationsRepository,
-          this.agentTeamInteractionsRepository,
           this.agentsManager,
           this.publisherFactory,
           agentConfiguration.role,

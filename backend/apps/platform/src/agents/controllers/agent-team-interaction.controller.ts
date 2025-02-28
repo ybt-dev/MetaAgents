@@ -39,14 +39,13 @@ export default class AgentTeamInteractionController {
   }
 
   @Post('/:id/reply')
-  public sendReplyMessage(
+  public async sendReplyMessage(
     @Session() session: SessionData,
     @Param('id') interactionId: string,
     @Body() body: SendReplyMessageToInteractionBodyDto,
   ) {
     return this.agentTeamInteractionService.sendReplyMessage({
       interactionId,
-      replyMessageId: body.replyMessageId,
       organizationId: session.organizationId,
       content: body.content,
       createdById: session.userId,

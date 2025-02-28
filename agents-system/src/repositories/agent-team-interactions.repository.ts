@@ -5,7 +5,7 @@ export interface AgentTeamInteractionDocument {
 }
 
 export interface AgentTeamInteractionsRepository {
-  addMessageIdToRepliesQueue(messageId: string, interactionId: string): Promise<void>;
+  lockTeamInteraction(interactionId: string, lockedTill: Date): Promise<void>;
 }
 
 export class MongodbAgentTeamInteractionsRepository implements AgentTeamInteractionsRepository {
@@ -15,7 +15,7 @@ export class MongodbAgentTeamInteractionsRepository implements AgentTeamInteract
     this.collection = this.database.collection('agent_team_interactions');
   }
 
-  public async addMessageIdToRepliesQueue(messageId: string, interactionId: string) {
-    await this.collection.updateOne({ _id: new ObjectId(interactionId) }, { $push: { repliesQueue: messageId } });
+  public async lockTeamInteraction(interactionId: string, lockedTill: Date) {
+    await this.collection.updateOne({ _id: new ObjectId(interactionId) }, { $set: { lockedTill } });
   }
 }

@@ -6,11 +6,10 @@ export interface AgentTeamInteractionDto {
   title: string;
   teamId: string;
   organizationId: string;
-  repliesQueue: string[];
   createdAt: Date;
   updatedAt: Date;
   createdById?: string | null;
-  additionalDataRequested?: boolean;
+  lockedTill?: Date | string | null;
 }
 
 export class ListAgentTeamInteractionsQueryDto {
@@ -37,8 +36,4 @@ export class SendReplyMessageToInteractionBodyDto {
   @IsString()
   @IsNotEmpty()
   content: string;
-
-  @IsIdentifier()
-  @IsNotEmpty()
-  replyMessageId: string;
 }

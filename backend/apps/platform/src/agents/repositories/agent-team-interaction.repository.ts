@@ -8,23 +8,28 @@ import { MongodbTransaction } from '@libs/mongodb-transactions';
 import { AgentTeamInteraction } from '@apps/platform/agents/schemas';
 import { AgentTeamInteractionEntity, MongoAgentTeamInteractionEntity } from '@apps/platform/agents/entities';
 
-export interface FindAgentTeamInteractionFilter {
+export interface FindAgentTeamInteractionEntityFilter {
   teamId?: string;
   organizationId: string;
 }
 
-export interface CreateAgentTeamInteractionParams {
+export interface CreateAgentTeamInteractionEntityParams {
   title: string;
   team: string;
   organization: string;
   createdBy?: string | null;
+  lockedTill?: Date;
+}
+
+export interface UpdateAgentTeamInteractionEntityParams {
+  lockedTill?: Date;
 }
 
 export interface AgentTeamInteractionRepository {
-  findMany(filter: FindAgentTeamInteractionFilter): Promise<AgentTeamInteractionEntity[]>;
+  findMany(filter: FindAgentTeamInteractionEntityFilter): Promise<AgentTeamInteractionEntity[]>;
   findByIdAndOrganizationId(id: string, organizationId: string): Promise<AgentTeamInteractionEntity | null>;
-  createOne(params: CreateAgentTeamInteractionParams): Promise<AgentTeamInteractionEntity>;
-  removeMessageIdFromRepliesQueue(interactionId: string, messageId: string): Promise<void>;
+  createOne(params: CreateAgentTeamInteractionEntityParams): Promise<AgentTeamInteractionEntity>;
+  updateOneById(id: string, params: UpdateAgentTeamInteractionEntityParams): Promise<AgentTeamInteractionEntity | null>;
 }
 
 @Injectable()
@@ -34,7 +39,7 @@ export class MongoAgentTeamInteractionRepository implements AgentTeamInteraction
     @InjectTransactionsManager() private readonly transactionsManager: TransactionsManager<MongodbTransaction>,
   ) {}
 
-  public async findMany(filter: FindAgentTeamInteractionFilter) {
+  public async findMany(filter: FindAgentTeamInteractionEntityFilter) {
     const agentTeamInteractionDocuments = await this.model
       .find(
         {
@@ -72,7 +77,7 @@ export class MongoAgentTeamInteractionRepository implements AgentTeamInteraction
     return agentTeamInteractionDocument && new MongoAgentTeamInteractionEntity(agentTeamInteractionDocument);
   }
 
-  public async createOne(params: CreateAgentTeamInteractionParams): Promise<AgentTeamInteractionEntity> {
+  public async createOne(params: CreateAgentTeamInteractionEntityParams): Promise<AgentTeamInteractionEntity> {
     const [agentTeamInteractionDocument] = await this.model.create([params], {
       session: this.transactionsManager.getCurrentTransaction()?.getSession(),
     });
@@ -80,19 +85,17 @@ export class MongoAgentTeamInteractionRepository implements AgentTeamInteraction
     return new MongoAgentTeamInteractionEntity(agentTeamInteractionDocument);
   }
 
-  public async removeMessageIdFromRepliesQueue(interactionId: string, messageId: string) {
-    await this.model.updateOne(
+  public async updateOneById(id: string, params: UpdateAgentTeamInteractionEntityParams) {
+    const interactionDocument = await this.model.findOneAndUpdate(
       {
-        _id: new ObjectId(interactionId),
+        _id: new ObjectId(id),
       },
+      params,
       {
-        $pull: {
-          repliesQueue: messageId,
-        },
-      },
-      {
-        session: this.transactionsManager.getCurrentTransaction()?.getSession(),
+        session: this.transactionsManager.getCurrentTransaction().getSession(),
       },
     );
+
+    return interactionDocument && new MongoAgentTeamInteractionEntity(interactionDocument);
   }
 }
