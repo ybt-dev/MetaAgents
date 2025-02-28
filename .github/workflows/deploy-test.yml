@@ -49,6 +49,7 @@ jobs:
         REDIS_URL
         PORT
         WALLET_ENCRYPTION_SECRET_KEY
+        NFT_CONTRACT_ADDRESS
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
@@ -79,6 +80,8 @@ jobs:
         AWS_REGION
         WALLET_ENCRYPTION_SECRET_KEY
         BACKEND_URL
+        TOGETHER_API_KEY
+        AWS_S3_BUCKET
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.TEST_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.TEST_AWS_SECRET_ACCESS_KEY }}
