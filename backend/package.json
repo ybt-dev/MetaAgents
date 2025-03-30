@@ -42,6 +42,7 @@
     "class-validator": "^0.14.1",
     "dayjs": "^1.11.11",
     "elliptic": "^6.6.1",
+    "ethers": "^6.13.5",
     "ioredis": "^5.5.0",
     "joi": "^17.13.1",
     "lodash.chunk": "^4.2.0",

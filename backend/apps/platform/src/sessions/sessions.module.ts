@@ -9,7 +9,11 @@ import { DefaultSessionService } from './services';
 import { MongoSessionNonceRepository } from './repositories';
 import { SessionNonce, SessionNonceSchema } from './schemas';
 import { AuthProvider } from './enums';
-import { MessageValidatorService, InitiaMessageValidatorService } from './services/message-validators';
+import {
+  MessageValidatorService,
+  InitiaMessageValidatorService,
+  EvmMessageValidatorService,
+} from './services/message-validators';
 import SessionsModuleTokens from './sessions.module.tokens';
 
 @Module({
@@ -32,20 +36,33 @@ import SessionsModuleTokens from './sessions.module.tokens';
     },
     {
       provide: SessionsModuleTokens.Factories.MessageValidatorServiceFactory,
-      useFactory: (initiaMessageValidatorService: MessageValidatorService) => {
+      useFactory: (
+        initiaMessageValidatorService: MessageValidatorService,
+        evmMessageValidatorService: MessageValidatorService,
+      ) => {
         return (authProvider: AuthProvider) => {
           switch (authProvider) {
             case AuthProvider.Initia: {
               return initiaMessageValidatorService;
             }
+            case AuthProvider.Evm: {
+              return evmMessageValidatorService;
+            }
+            default: {
+              throw new Error(`Unsupported auth provider: ${authProvider}`);
+            }
           }
         };
       },
-      inject: [InitiaMessageValidatorService],
+      inject: [InitiaMessageValidatorService, EvmMessageValidatorService],
     },
     {
       provide: InitiaMessageValidatorService,
       useClass: InitiaMessageValidatorService,
+    },
+    {
+      provide: EvmMessageValidatorService,
+      useClass: EvmMessageValidatorService,
     },
   ],
   exports: [SessionsModuleTokens.Services.SessionService],

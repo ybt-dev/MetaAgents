@@ -45,6 +45,7 @@ export class DefaultSessionService implements SessionService {
 
   public async create(params: CreateSessionParams) {
     const messageValidatorService = this.messageValidatorServiceFactory(params.provider);
+
     const { success, nonce, address } = await messageValidatorService.verify(
       params.message,
       params.signature,

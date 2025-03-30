@@ -5,7 +5,8 @@ export interface CreateSessionParams {
   message: string;
   signature: string;
   nonce: string;
-  pubKey: string;
+  pubKey?: string;
+  provider?: string;
 }
 
 export interface SessionsApi {
@@ -29,7 +30,7 @@ export default class SessionsRestApi implements SessionsApi {
   public async createSession(params: CreateSessionParams) {
     await this.client.makeCall(`/sessions`, 'POST', {
       ...params,
-      provider: 'initia',
+      provider: params.provider,
     });
   }
 

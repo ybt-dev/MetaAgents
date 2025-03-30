@@ -18,7 +18,7 @@ import InteractionMessagesRestApi from './api/InteractionMessagesApi.ts';
 import './tailwind.css';
 
 const filterWallet = (wallet: WidgetWallet) => {
-  return ['initia', 'cosmos', 'evm'].includes(wallet.type);
+  return ['initia', 'evm'].includes(wallet.type);
 };
 
 function App() {
